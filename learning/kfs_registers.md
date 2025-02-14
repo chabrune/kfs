@@ -139,9 +139,6 @@ La mémoire est divisée en segments de 64 Ko. Chaque adresse est représentée 
 
 ```
 adresse_réelle = segment * 16 + offset
-```
-
-Bien sûr ! Voici une version détaillée et enrichie de la section sur les **registres** du processeur. J'ai ajouté des explications plus approfondies sur chaque type de registre, leur rôle, et des exemples d'utilisation. Cela devrait vous aider à mieux comprendre leur fonctionnement dans le contexte de votre projet de développement d'un kernel from scratch.
 
 ---
 
