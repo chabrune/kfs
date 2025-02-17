@@ -1,21 +1,24 @@
-; boot.asm
-   mov ax, 0x07c0
-   mov ds, ax
+section .multiboot
+align 4
+dd 0x1BADB002 ; magic number 
+dd 0x01 | 0x02
+dd - (0x1BADB002 + (0x01 | 0x02)) ; checksum
 
-   mov si, msg
-   cld
-ch_loop:lodsb
-   or al, al ; zero=end of str
-   jz hang   ; get out
-   mov ah, 0x0E
-   mov bh, 0
-   int 0x10
-   jmp ch_loop
+extern kmain
 
-hang:
-   jmp hang
+global _start
 
-msg   db 'Hello World', 13, 10, 0
-times 510-($-$$) db 0
-db 0x55
-db 0xAA
+section .bss
+   align 16
+   stack_bottom:
+      resb 4096
+   stack_top:
+
+section .text
+_start:
+   mov esp, stack_top
+   call kmain
+   hang:
+      cli
+      hlt
+      jmp hang
