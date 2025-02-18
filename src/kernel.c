@@ -17,6 +17,13 @@ void init(void)
     ypos = 0;
 }
 
+/*
+
+00000000 00000000
+\______/\______/
+   ↑        ↑
+ Color    Caractère ASCII
+*/
 void putc(char c)
 {
     switch (c)
@@ -44,27 +51,49 @@ void putc(char c)
         xpos = 0;
         ypos = 0;
     }
+    set_cursor(xpos, ypos);
 }
 
-static inline void outb(uint16_t port, uint8_t val) {
+/*
+__asm__ ("instruction" : output_operands : input_operands : clobbers);
+constraint modifiers : 
+a = specify eax
+N = int 0-255 ? 
+d = specify edx
+*/
+static inline void outb(uint16_t port, uint8_t val)
+{
     __asm__ volatile (
-        "out dx, al"   // Utilise les registres dx (port) et al (valeur)
-        :               // Pas de sortie
-        : "a"(val), "Nd"(port)  // Entrées : "a" pour val (AL), "Nd" pour port (DX)
+        "out dx, al"
+        :
+        : "a"(val), "Nd"(port)
     );
 }
 
+/*  x3D4 : Registre d'index pour le contrôleur VGA.
+    0x0E : Indique au contrôleur VGA que nous voulons écrire dans le registre de la partie haute de la position du curseur.
+    (pos >> 8) : Extrait les 8 bits de poids fort de pos (la partie haute).
+*/
 void set_cursor(int x, int y) {
     uint16_t pos = y * COLUMNS + x;
 
     outb(0x3D4, 0x0E);
-    outb(0x3D5, (pos >> 8) & 0xFF);
+    outb(0x3D5, (pos >> 8));
 
     outb(0x3D4, 0x0F);
-    outb(0x3D5, pos & 0xFF);
+    outb(0x3D5, (uint8_t)pos);
 }
 
-
+static inline uint8_t inb(uint16_t port)
+{
+    uint8_t ret;
+    __asm__ volatile (
+        "in al, dx"    // Lit le port DX et met la valeur dans AL
+        : "=a"(ret)     // La sortie (AL) est assignée à 'ret'
+        : "Nd"(port)     // Le port est passé en entrée (peut être dans n'importe quel registre)
+    );
+    return ret;
+}
 
 void puts(const char *s)
 {
@@ -79,6 +108,5 @@ void puts(const char *s)
 void kmain(void)
 {
     init();
-    puts("42");
-    set_cursor(2,0);
+    puts("FuckOs>$");
 }
