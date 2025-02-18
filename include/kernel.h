@@ -37,8 +37,6 @@ typedef signed long long   int64_t;
 
 void init (void);
 void kmain (void);
-int ft_strcmp(const char *s1, const char *s2);
-unsigned int ft_strlen(const char *str);
 static inline void outb(uint16_t port, uint8_t val);
 void set_cursor(int x, int y);
 

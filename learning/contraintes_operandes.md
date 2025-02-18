@@ -123,5 +123,3 @@ Les **contraintes** permettent au compilateur de choisir **comment passer les va
 1. **Optimiser le code** en évitant des mouvements de registre inutiles.
 2. **S'assurer que les bons registres sont utilisés** pour certaines instructions (`out`, `in`, `mul`, etc.).
 3. **Informer GCC des effets de bord**, comme les modifications de mémoire.
-
-Si tu veux approfondir un type de contrainte, dis-moi ! 😊

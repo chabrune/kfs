@@ -154,26 +154,6 @@ SECTIONS {
 }
 ```
 
-### 6.4. Compilation et édition de liens
-1. Assembler le fichier assembleur :
-   ```bash
-   nasm -f elf32 boot.asm -o boot.o
-   ```
-2. Compiler le fichier C :
-   ```bash
-   gcc -m32 -c kernel.c -o kernel.o
-   ```
-3. Lier les fichiers objets :
-   ```bash
-   ld -m elf_i386 -T linker.ld -o kernel.bin boot.o kernel.o
-   ```
-
-### 6.5. Utilisation avec GRUB
-- Placez `kernel.bin` dans un répertoire accessible par GRUB (par exemple, `/boot`).
-- Configurez GRUB pour charger `kernel.bin` comme noyau.
-
----
-
 ## 7. Conclusion
 
 Le **Multiboot** est une spécification qui simplifie le chargement des noyaux en fournissant une interface standardisée entre le bootloader et le noyau. **GRUB** est un bootloader populaire qui supporte Multiboot et permet de charger des noyaux personnalisés de manière fiable et flexible.
