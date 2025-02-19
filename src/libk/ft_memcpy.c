@@ -1,6 +1,6 @@
 #include "../../include/libk.h"
 
-void *memcpy(void *dest, const void *src, uint32_t n)
+void *ft_memcpy(void *dest, const void *src, uint32_t n)
 {
     unsigned char *pd = (unsigned char *)dest;
     const unsigned char *ps = (const unsigned char *)src;

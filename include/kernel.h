@@ -1,9 +1,9 @@
 #ifndef KERNEL__H
-# define KERNEL__H
+#define KERNEL__H
 
 # define VIDEO 0xB8000
 # define COLUMNS 80 // x
-# define LINES 24 // y
+# define LINES 25 // y
 # define MULTIBOOT_HEADER_MAGIC 0x1BADB002
 # define VGA_COLOR(fg, bg) ((bg << 4) | (fg))
 
@@ -35,9 +35,13 @@ typedef signed long long   int64_t;
 # define VGA_WHITE 0xF
 
 
-void init (void);
-void kmain (void);
-static inline void outb(uint16_t port, uint8_t val);
-void set_cursor(int x, int y);
+void                init (void);
+void                kmain (void);
+static inline void  outb(uint16_t port, uint8_t val);
+void                set_cursor(int x, int y);
+void                putc(char c);
+void                ft_printk(const char *fmt, ...);
+void                puts(const char *s);
+
 
 #endif

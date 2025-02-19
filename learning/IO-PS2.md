@@ -33,6 +33,7 @@ Le **contrôleur PS/2** est un contrôleur de périphériques utilisé pour gér
 ---
 
 ## **Fonctionnement du contrôleur PS/2**  
+`IRQ = Interrupt Request`
 Le contrôleur PS/2 est **connecté à l'IRQ 1** (pour le clavier) et **IRQ 12** (pour la souris). Il communique avec le processeur via les **ports d'entrée/sortie (I/O ports)** suivants :  
 
 | **Port** | **Description** |
@@ -225,3 +226,49 @@ Le registre d’état contient plusieurs bits qui indiquent l’état du contrô
 ## **Conclusion**
 L’activation de **A20** est essentielle pour pouvoir adresser plus de **1 Mo de mémoire**.  
 Le **contrôleur PS/2** joue un rôle clé non seulement dans la gestion du clavier/souris, mais aussi dans l’activation d’**A20** sur les anciens systèmes.  
+
+
+### **IRQ (Interrupt Request)**
+IRQ (Interrupt Request) est une requête d'interruption matérielle envoyée par un périphérique à l'unité centrale (CPU) pour signaler un événement nécessitant une action immédiate.  
+
+#### **Comment fonctionne une IRQ ?**
+1. Un périphérique (ex: clavier, souris, carte réseau) envoie un signal d'interruption sur une ligne IRQ.
+2. Le **Programmable Interrupt Controller (PIC)** ou **Advanced Programmable Interrupt Controller (APIC)** détecte l'interruption et l'achemine vers le processeur.
+3. Le processeur interrompt l'exécution de son programme en cours et exécute le **handler d'interruption** (ISR - Interrupt Service Routine).
+4. Une fois le traitement terminé, le CPU reprend l'exécution normale.
+
+#### **Table des IRQ classiques (avec PIC 8259)**
+| IRQ  | Périphérique associé            | Port du contrôleur d'interruptions |
+|------|---------------------------------|------------------------------------|
+| 0    | Timer système                   | 0x20                              |
+| 1    | Clavier (PS/2)                   | 0x21                              |
+| 2    | Cascade vers le second PIC (IRQ 8-15) | 0x22                     |
+| 3    | Port série COM2                  | 0x23                              |
+| 4    | Port série COM1                  | 0x24                              |
+| 5    | Carte son / LPT2                 | 0x25                              |
+| 6    | Contrôleur de disquette          | 0x26                              |
+| 7    | Port parallèle LPT1              | 0x27                              |
+| 8    | Horloge temps réel (RTC)         | 0x28                              |
+| 9    | Périphériques divers / ACPI      | 0x29                              |
+| 10   | Carte réseau                     | 0x2A                              |
+| 11   | Périphériques divers             | 0x2B                              |
+| 12   | Souris PS/2                      | 0x2C                              |
+| 13   | Coprocesseur mathématique (FPU)  | 0x2D                              |
+| 14   | Contrôleur IDE primaire          | 0x2E                              |
+| 15   | Contrôleur IDE secondaire        | 0x2F                              |
+
+Dans le cas du **clavier PS/2**, l’IRQ associée est **IRQ1**, qui envoie des interruptions lorsqu'une touche est pressée ou relâchée.
+
+---
+
+### **PS/2 (IBM Personal System/2)**
+Le **PS/2** est une interface de connexion développée par IBM en 1987 pour les claviers et souris. Il utilise un protocole série synchrone bidirectionnel.
+
+#### **Ports PS/2**
+- **Port clavier** : Adresse I/O **0x60** (données) et **0x64** (commandes)
+- **Port souris** : Utilise également 0x60 et 0x64 via le **contrôleur clavier 8042**
+
+#### **Comment fonctionne l’interface PS/2 ?**
+1. Lorsqu'une touche est pressée ou relâchée, un **scan code** est envoyé au port **0x60**.
+2. Une interruption est déclenchée sur **IRQ1** (clavier) ou **IRQ12** (souris).
+3. Le processeur exécute l'**ISR (Interrupt Service Routine)** correspondant pour traiter l'entrée clavier/souris.

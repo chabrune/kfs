@@ -1,6 +1,6 @@
 #include "../../include/libk.h"
 
-char *strcpy(char *dest, const char *src)
+char *ft_strcpy(char *dest, const char *src)
 {
     uint32_t i = 0;
     while(src[i])

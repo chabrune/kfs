@@ -3,7 +3,7 @@
 volatile uint16_t *video = (uint16_t*)VIDEO;
 int xpos;
 int ypos;
-uint8_t text_color = VGA_COLOR(VGA_RED, VGA_BLACK);
+uint8_t text_color = VGA_COLOR(VGA_LIGHT_RED, VGA_BLACK);
 
 
 void init(void)
@@ -109,4 +109,5 @@ void kmain(void)
 {
     init();
     puts("FuckOs>$");
+    ft_printk("%d", inb(0x64));
 }

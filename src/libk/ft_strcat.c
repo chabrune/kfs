@@ -1,6 +1,6 @@
 #include "../../include/libk.h"
 
-void     strcat(char *dest, const char *src)
+void     ft_strcat(char *dest, const char *src)
 {
     uint32_t len = ft_strlen(dest);
     uint32_t i;
