@@ -1,4 +1,4 @@
-#include "../../include/libk.h"
+#include "../../include/lib.h"
 
 unsigned int ft_strlen(const char *str)
 {

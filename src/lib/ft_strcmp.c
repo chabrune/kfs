@@ -1,4 +1,4 @@
-#include "../../include/libk.h"
+#include "../../include/lib.h"
 
 int ft_strcmp(const char *s1, const char *s2)
 {

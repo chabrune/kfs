@@ -1,4 +1,4 @@
-#include "../../include/libk.h"
+#include "../../include/lib.h"
 
 int ft_lenght(int nb)
 {

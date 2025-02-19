@@ -1,4 +1,4 @@
-#include "../../include/libk.h"
+#include "../../include/lib.h"
 
 void *ft_memset (void *s, int c, uint32_t n)
 {

@@ -34,14 +34,11 @@ typedef signed long long   int64_t;
 # define VGA_LIGHT_BROWN 0xE
 # define VGA_WHITE 0xF
 
-
 void                init (void);
 void                kmain (void);
 static inline void  outb(uint16_t port, uint8_t val);
 void                set_cursor(int x, int y);
 void                putc(char c);
-void                ft_printk(const char *fmt, ...);
 void                puts(const char *s);
-
 
 #endif

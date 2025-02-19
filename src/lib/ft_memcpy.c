@@ -1,4 +1,4 @@
-#include "../../include/libk.h"
+#include "../../include/lib.h"
 
 void *ft_memcpy(void *dest, const void *src, uint32_t n)
 {

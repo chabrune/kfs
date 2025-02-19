@@ -1,4 +1,4 @@
-#include "../../include/libk.h"
+#include "../../include/lib.h"
 
 void     ft_strcat(char *dest, const char *src)
 {

@@ -1,4 +1,4 @@
-#include "../../include/libk.h"
+#include "../../include/lib.h"
 
 char *ft_strcpy(char *dest, const char *src)
 {

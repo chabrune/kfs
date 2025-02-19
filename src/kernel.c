@@ -1,4 +1,6 @@
 #include "../include/kernel.h"
+#include "../include/idt.h"
+#include "../include/lib.h"
 
 volatile uint16_t *video = (uint16_t*)VIDEO;
 int xpos;
@@ -84,13 +86,18 @@ void set_cursor(int x, int y) {
     outb(0x3D5, (uint8_t)pos);
 }
 
+/*
+    Lit le port DX et met la valeur dans AL
+    La sortie (AL) est assignée à 'ret'
+    Le port est passé en entrée
+*/
 static inline uint8_t inb(uint16_t port)
 {
     uint8_t ret;
     __asm__ volatile (
-        "in al, dx"    // Lit le port DX et met la valeur dans AL
-        : "=a"(ret)     // La sortie (AL) est assignée à 'ret'
-        : "Nd"(port)     // Le port est passé en entrée (peut être dans n'importe quel registre)
+        "in al, dx"
+        : "=a"(ret)
+        : "Nd"(port)
     );
     return ret;
 }
@@ -109,5 +116,5 @@ void kmain(void)
 {
     init();
     puts("FuckOs>$");
-    ft_printk("%d", inb(0x64));
+    void IDT_initialize();
 }
