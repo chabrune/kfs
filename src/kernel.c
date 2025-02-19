@@ -116,5 +116,5 @@ void kmain(void)
 {
     init();
     puts("FuckOs>$");
-    void IDT_initialize();
+    IDT_initialize();
 }
