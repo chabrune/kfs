@@ -2,6 +2,10 @@
 #include "../include/idt.h"
 #include "../include/lib.h"
 
+void test()
+{
+    putc('l');
+}
 IDTEntry g_IDT[256];
 IDTDescriptor g_IDTDescriptor = {sizeof(g_IDT) - 1, g_IDT};
 
