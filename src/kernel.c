@@ -112,11 +112,9 @@ void puts(const char *s)
     }
 }
 
-void test();
 void kmain(void)
 {
     init();
-    test();
     puts("FuckOs>$");
     IDT_initialize();
 }

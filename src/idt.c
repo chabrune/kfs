@@ -2,10 +2,6 @@
 #include "../include/idt.h"
 #include "../include/lib.h"
 
-void test()
-{
-    putc('l');
-}
 IDTEntry g_IDT[256];
 IDTDescriptor g_IDTDescriptor = {sizeof(g_IDT) - 1, g_IDT};
 
@@ -22,8 +18,6 @@ void IDT_SetGate(int interrupt, void *base, uint16_t segmentDescriptor, uint8_t 
 
 void IDT_initialize()
 {
-    putc('4');
-    ft_printk("%s", "COUCOU");
     IDT_LOAD(&g_IDTDescriptor);
-    ft_printk("%s", "COUCOU");
+    ft_printk("%d", g_IDTDescriptor.Ptr);
 }
