@@ -1,5 +1,4 @@
 ENTRY(_start)
-
 SECTIONS
 {
 	. = 2M;
@@ -20,5 +19,11 @@ SECTIONS
 	{
 		*(COMMON)
 		*(.bss)
+	}
+	
+	.stack ALIGN(16) : 
+	{
+		. = . + 4096;
+		stack_top = .;
 	}
 }

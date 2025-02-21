@@ -54,8 +54,8 @@ iso: all
 	@grub-mkrescue -o $(NAME).iso --compress=xz iso
 
 debug: all
-	qemu-system-i386 -cdrom $(ISO) -s -S & \
-	sleep 1 && \
+	qemu-system-i386 -cdrom $(ISO) -s & \
+	sleep 2 && \
 	gdb -ex "target remote :1234" kfs.iso
 
 .PHONY: all clean run re

@@ -22,14 +22,9 @@ KbdControllerWriteCtrlOutputPort    equ 0xD1  ; Demande au contrôleur PS/2 d'é
 
 
 extern kmain
+extern stack_top
 
 global _start
-
-section .bss
-   align 16
-   stack_bottom:
-      resb 4096
-   stack_top:
 
 section .text
 _start:
