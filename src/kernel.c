@@ -2,6 +2,8 @@
 #include "../include/idt.h"
 #include "../include/lib.h"
 
+void enable_cursor(uint8_t cursor_start, uint8_t cursor_end);
+
 volatile uint16_t *video = (uint16_t*)VIDEO;
 int xpos;
 int ypos;
@@ -28,6 +30,7 @@ void init(void)
 */
 void putc(char c)
 {
+    enable_cursor(0, 15);
     switch (c)
     {
         case '\n':
@@ -72,20 +75,6 @@ static inline void outb(uint16_t port, uint8_t val)
     );
 }
 
-/*  x3D4 : Registre d'index pour le contrôleur VGA.
-    0x0E : Indique au contrôleur VGA que nous voulons écrire dans le registre de la partie haute de la position du curseur.
-    (pos >> 8) : Extrait les 8 bits de poids fort de pos (la partie haute).
-*/
-void set_cursor(int x, int y) {
-    uint16_t pos = y * COLUMNS + x;
-
-    outb(0x3D4, 0x0E);
-    outb(0x3D5, (pos >> 8));
-
-    outb(0x3D4, 0x0F);
-    outb(0x3D5, (uint8_t)pos);
-}
-
 /*
     Lit le port DX et met la valeur dans AL
     La sortie (AL) est assignée à 'ret'
@@ -102,6 +91,28 @@ static inline uint8_t inb(uint16_t port)
     return ret;
 }
 
+void enable_cursor(uint8_t cursor_start, uint8_t cursor_end) {
+    outb(0x3D4, 0x0A);
+    outb(0x3D5, (inb(0x3D5) & 0xC0) | cursor_start);
+
+    outb(0x3D4, 0x0B);
+    outb(0x3D5, (inb(0x3D5) & 0xE0) | cursor_end);
+}
+/*  x3D4 : Registre d'index pour le contrôleur VGA.
+    0x0E : Indique au contrôleur VGA que nous voulons écrire dans le registre de la partie haute de la position du curseur.
+    (pos >> 8) : Extrait les 8 bits de poids fort de pos (la partie haute).
+*/
+void set_cursor(int x, int y) {
+    uint16_t pos = y * COLUMNS + x;
+
+    outb(0x3D4, 0x0E);
+    outb(0x3D5, (pos >> 8));
+
+    outb(0x3D4, 0x0F);
+    outb(0x3D5, (uint8_t)pos);
+}
+
+
 void puts(const char *s)
 {
     uint32_t i = 0;
@@ -111,6 +122,9 @@ void puts(const char *s)
         i++;
     }
 }
+
+
+
 
 void kmain(void)
 {

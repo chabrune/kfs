@@ -38,13 +38,13 @@ $(BUILD_DIR)/%.o: $(SRC_DIR)/%.s
 	@mkdir -p $(dir $@)
 	$(NASM) $(NASM_FLAGS) $< -o $@ 
 
-run: $(BUILD_DIR)/$(NAME)
+run: $(BUILD_DIR)/$(NAME) | iso
 	qemu-system-i386 -cdrom $(ISO)
 
 clean:
 	@rm -rf $(BUILD_DIR) $(ISO) $(ISO_DIR)
 
-re: clean all
+re: clean all run
 
 iso: all
 	mkdir -p iso/boot/grub
