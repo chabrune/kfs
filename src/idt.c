@@ -6,6 +6,7 @@ IDTEntry g_IDT[256];
 IDTDescriptor g_IDTDescriptor = {sizeof(g_IDT) - 1, g_IDT};
 
 extern void __attribute__((cdecl)) IDT_LOAD(IDTDescriptor* idtDescriptor);
+extern void __attribute__((cdecl)) keyboard_handler();
 
 void IDT_SetGate(int interrupt, void *base, uint16_t segmentDescriptor, uint8_t flags)
 {
@@ -19,5 +20,6 @@ void IDT_SetGate(int interrupt, void *base, uint16_t segmentDescriptor, uint8_t 
 void IDT_initialize()
 {
     IDT_LOAD(&g_IDTDescriptor);
-    ft_printk("%d", g_IDTDescriptor.Ptr);
+    IDT_SetGate(33, &keyboard_handler, 0x08, IDT_FLAG_PRESENT | IDT_FLAG_RING0 | IDT_FLAG_GATE_32BIT_INT);
+    // ft_printk("%d", g_IDTDescriptor.Ptr);
 }

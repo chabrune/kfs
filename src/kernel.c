@@ -123,7 +123,16 @@ void puts(const char *s)
     }
 }
 
+void keyboard_callback() {
+    uint8_t scancode = inb(0x60);
+    ft_printk("%d", scancode);
 
+    if (scancode & 0x80) {
+        // Touche relâchée
+    } else {
+        putc('A'); // À améliorer avec un mapping scancode -> ASCII
+    }
+}
 
 
 void kmain(void)
@@ -131,4 +140,5 @@ void kmain(void)
     init();
     puts("FuckOs>$");
     IDT_initialize();
+    __asm__ volatile ("sti");
 }

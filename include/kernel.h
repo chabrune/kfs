@@ -40,5 +40,7 @@ static inline void  outb(uint16_t port, uint8_t val);
 void                set_cursor(int x, int y);
 void                putc(char c);
 void                puts(const char *s);
+void                keyboard_callback();
+
 
 #endif
