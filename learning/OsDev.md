@@ -280,6 +280,7 @@ The GDT can trigger a **GPF**.
 ---
 
 ### Task State Segment (TSS):
+**TSS IS OPTIONAL**
 The **TSS** is a memory structure that stores the state of a task (process or thread) in protected mode. The **TSS Descriptor (TSSD)** is an entry in the GDT that describes the location and size of the TSS.
 
 The **TSS** is used by the CPU to:
@@ -288,6 +289,7 @@ The **TSS** is used by the CPU to:
 - Define the stack for privilege transitions (Ring 3 → Ring 0).
 
 ### TSS in 32-bit Mode:
+
 | **Field**          | **Size** | **Description** |
 |--------------------|-----------|----------------|
 | **Previous TSS**   | 4 bytes   | Used for linked task switching, otherwise 0. |
@@ -306,3 +308,65 @@ The **TSS** is used by the CPU to:
 | **IO Map Base**    | 2 bytes   | Start of the I/O permission bitmap. |
 
 ---
+
+### Segment Descriptor
+
+A **Segment Descriptor** is **8 bytes long** (64 bits) and is divided into multiple fields.
+
+### **Diagram of a Segment Descriptor (64 bits)**  
+
+```
+   63                            48 47   46  45  44 43   40 39             32
+  +--------------------------------+----+---+---+---+------+----------------+
+  |        Base (31:24)            | G  | D | 0 | A |  Limit (19:16)        |
+  +--------------------------------+----+---+---+---+------+----------------+
+   31              24 23       16 15  14  13  12 11              0
+  +----------------+------------+----+---+---+-----------------+
+  |  Base (23:16)  |    Access   | P  |DPL| S |    Type        |
+  +----------------+------------+----+---+---+-----------------+
+  |         Base (15:0)         |          Limit (15:0)        |
+  +-----------------------------+------------------------------+
+```
+
+### **Field :**
+
+| **Field**           | **Offset (Bits)**  | **Size (Bits)** | **Description** |
+|--------------------|------------------|----------------|----------------|
+| **Limit (15:0)**   | 0 – 15           | 16             | First part of the segment limit (size). |
+| **Base (15:0)**    | 16 – 31          | 16             | First part of the segment base address. |
+| **Base (23:16)**   | 32 – 39          | 8              | Second part of the base address. |
+| **Type**           | 40 – 43          | 4              | Defines the segment type (code, data, permissions, etc.). |
+| **S (Descriptor Type)** | 44         | 1              | 1 = Code/Data segment, 0 = System segment. |
+| **DPL (Privilege Level)** | 45 – 46   | 2              | Privilege level (0 = Kernel, 3 = User). |
+| **P (Present)**    | 47              | 1              | 1 = Segment is in memory, 0 = Not loaded. |
+| **Limit (19:16)**  | 48 – 51         | 4              | Second part of the segment limit. |
+| **A (Available)**  | 52              | 1              | Always 0 in most cases. |
+| **0**             | 53              | 1              | Always 0. |
+| **D (Default Operand Size)** | 54  | 1              | 0 = 16-bit, 1 = 32-bit. |
+| **G (Granularity)** | 55             | 1              | 0 = Limit in bytes, 1 = Limit in 4 KB blocks. |
+| **Base (31:24)**   | 56 – 63         | 8              | Third part of the base address. |
+
+---
+
+### **Structure of Access Byte (8 bits)**  
+
+```
+  7   |  6  |  5  |  4   |  3   |  2   |  1   |  0
+---------------------------------------------------
+   P  | DPL |  S  |  E   |  DC  |  RW  |  A  
+```
+
+| Bit  | Name | Description |
+|------|------|------------|
+| **7**  | **P (Present)** | Indicates if the segment is in memory (`1 = present`, `0 = not present`). |
+| **6-5** | **DPL (Descriptor Privilege Level)** | Segment privilege level (`0 = kernel`, `3 = user`). |
+| **4**  | **S (Descriptor Type)** | `1 = code/data segment`, `0 = system segment`. |
+| **3**  | **E (Executable bit)** | `1 = code segment`, `0 = data segment`. |
+| **2**  | **DC (Direction/Conforming bit)** | Changes depending on segment type (see explanation below). |
+| **1**  | **RW (Read/Write bit)** | Enables reading for code or writing for data. |
+| **0**  | **A (Accessed bit)** | Set to `1` by the CPU when the segment is accessed. |
+---
+
+
+We can also see CPL for Current Privilege Level
+DPL is on 2 bits = 00 01 11
