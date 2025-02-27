@@ -140,5 +140,5 @@ void kmain(void)
     init();
     puts("FuckOs>$");
     IDT_initialize();
-    __asm__ volatile ("sti");
+    // __asm__ volatile ("sti");
 }

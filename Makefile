@@ -44,7 +44,7 @@ run: $(BUILD_DIR)/$(NAME) | iso
 clean:
 	@rm -rf $(BUILD_DIR) $(ISO) $(ISO_DIR)
 
-re: clean all run
+re: clean all
 
 iso: all
 	mkdir -p iso/boot/grub
