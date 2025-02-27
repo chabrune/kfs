@@ -54,10 +54,13 @@ Then go to his boot priority list (something that can store Os)
     - network ?
 
 If I set usb mass storage at top priority on the list and plug USB stick with my childhood photo the BIOS will try to boot with my photos. 
+
 Spoiler : He cannot
+
 For that reason they had to implement some way for the BIOS to know if storage include any bootable code. And the way this is done depends on whether using Legacy BIOS or UEFI BIOS.
 
 Sector : 512 bytes chunk memory that mass storage devices are split into
+
 The first sector of a mass storage device is called its boot sector
 
 ---
@@ -65,7 +68,9 @@ The first sector of a mass storage device is called its boot sector
 - Loads boot sector into the random access memory at hexa address `0x7C00` and look for a signature `01010101 10101010 -> 55 AA`
 
 Why `01010101 10101010` ? 
+
 If we have 8 bits bus then all combinations will be tested/ will be forced to change his states (0 or 1). It's a very good test over every bit can be flipped.
+
 0x86 CPU is most little endian based so signature will be `0xAA55`.
 
 So the BIOS loads the boot sector into RAM and the 2 last bytes of the boot sector has to be `0x55AA`.
@@ -79,6 +84,7 @@ Why ?
 Because if not the CPU will search into the next mass storage device to find a bootsector.
 
 firmware = permanent software programmed into a read-only memory.
+
 partition = is a sort of given section of disk which has a determined starting and ending point - it's a way to split of the disk in some smaller sections
 
 **Master Boot Record :**
@@ -104,6 +110,7 @@ partition = is a sort of given section of disk which has a determined starting a
 ## UEFI :
 
 Check for a valid GPT (GUID Partition Table)
+
 GUID means Globally Unique Identifier
 
 ```
@@ -128,6 +135,7 @@ GUID means Globally Unique Identifier
 # Using BIOS instructions
 
 The bootloader has to prepare the environment for the kernel
+
 The x86 CPU boots in a 16 bits mode and have 3 main modes :
 - Real mode | 16 bits
     CPU has access to only 1MB of memory | Uses BIOS INT to communicate with hardware | No memory protection or multitasking
@@ -144,10 +152,13 @@ What the bootloader has to do :
     - Collects memory maps, CPU info, filesystem data, and boot parameters for the kernel.
 
 Interrupts are basically signals sent to a CPU through an external bus that have a given code.
+
 They tell the CPU that it should stop what it's currently doing and handle something external and only when the CPU has finished handlung that external thing he can go back to the thing that he was doing.
 
 CPU has a chip (most common is 8259 PIC chip) which functions as the interrupt controller - what should be done with those interrupts
+
 ** PIC = Programmable Interrupt Controller **
+
 What it does ?
 
 Keyboard exemple : When a key is pressed an interrupt is sent to the CPU with a code that tells who is sending that interrupt and the CPU can read some ports that are assigned to the keyboard and read which key is pressed
@@ -178,12 +189,17 @@ Keyboard exemple : When a key is pressed an interrupt is sent to the CPU with a 
 ---
 - System calls :
     - Syscall are handle with interrupts. A given interrupt code will be assigned to a given instruction
+
 In real mode, the CPU and BIOS communicate via interrupts, with the BIOS executing 16-bit code to handle hardware events and return data.
+
 BIOS is our friend.
+
 The BIOS has access to all of the CPU registers. BIOS can read registers later.
 
 The BIOS offers different BIOS instruction which can do different things for us. Those are oganized in so-called instruction vectors.
+
 They are just lists of different instructions. They are accessed via **interrupt vectors** |  IVT (Interrupt Vector Table) 
+
 Interrupt vectors → A table of addresses that point to BIOS routines.
 
 **In protected mode the IDT replaces the IVT and defines handlers for exceptions, IRQs, and software interrupts.**
@@ -198,12 +214,17 @@ INT 0x10
 **The BIOS send 16 bits instructions code so obviously in higher bit modes you cannot ask the BIOS to do stuff**
 
 A hard drive disk had a couple plates and in between the plates you have heads alternatively called read/write heads
+
 The plates are rotating and what the head does it acts as a little elctromagnet and it switches the polarization of that region which flips the bits.
+
 It can also act as a reading device it can get close and detect the current polarization
+
 Sector should have 4096 different regions that can be separated from each other. 4096KB / 8 = 512 bytes.
 
 CHS -> Cylinder-Head-Sector
+
 Cylinder is a collection of tracks
+
 In more modern drives, LBA (Logical Block Addressing) has replaced CHS
 
 Avec LBA, chaque secteur du disque est simplement identifié par un numéro unique, appelé adresse LBA (LBA address). Au lieu de dire "va au cylindre 3, tête 2, secteur 8", on dit juste "va au secteur numéro 2048".
@@ -211,22 +232,29 @@ Avec LBA, chaque secteur du disque est simplement identifié par un numéro uniq
 Real mode addressing :
 
 We know that in real mode there are only 16 bits registers. But has addressing bus of 20 bits. But how a 16 bits CPU can address 20 bits of memory.
+
 Here comes the segment:offset system
+
 Both segment and offset are 16 bits values
+
 ADDR = (16 * Segment) + Offset
 
 1. Pourquoi multiplier le segment par 16 ?
     - Cela revient à décaler les bits du segment de 4 positions vers la gauche (un décalage de 4 bits correspond à une multiplication par 16).
-    Cela génère une adresse de 20 bits, permettant d’adresser 1 Mo de mémoire.
+    - Cela génère une adresse de 20 bits, permettant d’adresser 1 Mo de mémoire.
 
 DI uselly store the offset
+
 ES uselly store the segment but ES value is generally not modified
 
 So we have a maximum of 128 sector each of them is 512 bytes
+
 128*258 = 2^16 = 65536
 
+```
 Inst vector 0x13 | INT code
 Instruction 0x02 | AH
+```
 
 This BIOS interrupt reads sectors from a disk into memory.
 
@@ -244,9 +272,13 @@ params :
 ---
 
 If you're loading more than 64 KB, you'd need to adjust ES accordingly.
+
 DI (Destination Index) usually stores the offset in memory.
+
 (Extra Segment) usually stores the segment but is not frequently modified unless switching memory banks.
+
 Since each sector is 512 bytes, if you want to load 128 sectors, that means:
+
 128×512=65,536 (or 216 bytes, exactly 64 KB)
 
 This is why BIOS limits sector reads to 128 at a time—because the maximum size a 16-bit register can address in one go is 64 KB.
@@ -259,23 +291,28 @@ This is why BIOS limits sector reads to 128 at a time—because the maximum size
 ---
 
 The boot sector obviously has CHS (0, 0, 1)
+
 So if u want to load the first sector after the boot the value will be (0, 0, 2) CH -> DH -> CL
 
 It's recommanded to set DI to either 0x7E00 or 0x8000
+
 Why 0x7E00 ? 
+
 0x7E00 is 512 bytes after 0x7C00, meaning it is the next sector in memory.
 
 ---
 # Global Descriptor Table and Protected mode
 
 In 16 bits or real mode we use 20 bits bus but when 32 bits CPU has been released they have to find a way to maintain backward compatibility between 16 and 32 bits.
+
 So they find a lazy solution the A20 line.
+
 The A20 line—a gate that could be enabled or disabled to either allow or block access to memory above 1 MB
 
 CPU use a feature called FAST A20 :
-- They basically read from port 0x92 | IN AL (8 bits value) 0x92
-- Then flip the A20 bit | We want the snd bit to 1 = 00000010 -> OR AL, 2 (to flip the snd bit)
-- And write to the 0x92 port | OUT 0x92, AL
+    - They basically read from port 0x92 | IN AL (8 bits value) 0x92
+    - Then flip the A20 bit | We want the snd bit to 1 = 00000010 -> OR AL, 2 (to flip the snd bit)
+    - And write to the 0x92 port | OUT 0x92, AL
 
 Remember of logical gates :
 
@@ -302,9 +339,11 @@ Remember of logical gates :
 
 
 GDT is a table and a collection of different values, this table is global (accessible anywhere in our Os).
+
 To be precise GDT contains information about differents segments in memory and specify things like there base address, limit address and so on. This is a very vital component to the protected mode
 
 GPF = General Protection Fault
+
 GDT can be used for triggering something called GPF.
 
 - NULL DESCRIPTOR
@@ -313,7 +352,9 @@ GDT can be used for triggering something called GPF.
 - GDTR (GDT Register)
 
 Null descriptor is literally 8 bytes of zeros (64 bits)
+
 Code/Data descriptor describe segments like base address, limit address etc 
+
 Task state segment descriptor used when you make user space multitasking
 
 
