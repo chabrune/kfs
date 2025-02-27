@@ -81,8 +81,7 @@ Because if not the CPU will search into the next mass storage device to find a b
 firmware = permanent software programmed into a read-only memory.
 partition = is a sort of given section of disk which has a determined starting and ending point - it's a way to split of the disk in some smaller sections
 
-```
-Master Boot Record :
+**Master Boot Record :**
 
 | **Offset** | **Taille** | **Contenu** |
 |------------|-----------|-------------|
@@ -93,13 +92,12 @@ Master Boot Record :
 | 0x01FE | 2 bytes | **signature MBR (0x55AA)** |
 
 
-Table des partitions (64 octets)
-    -> Contient 4 entrées de 16 octets (1 par partition).
-        -> Chaque entrée décrit une partition :
-            - Type (FAT32, NTFS, EXT4, etc.)
-            - Adresse de début et de fin
-            - Statut (Active/Bootable)
-```
+- Table des partitions (64 octets) : Contient 4 entrées de 16 octets (1 par partition).
+    - Chaque entrée décrit une partition :
+        - Type (FAT32, NTFS, EXT4, etc.)
+        - Adresse de début et de fin
+        - Statut (Active/Bootable)
+
 **MBR is something you only need if you are going to implement a file system**
 
 ---
@@ -107,6 +105,7 @@ Table des partitions (64 octets)
 
 Check for a valid GPT (GUID Partition Table)
 GUID means Globally Unique Identifier
+
 ```
 +---------------------------+  Secteur 0
 |       MBR protégé         |  (Contient une partition 0xEE couvrant tout le disque)
