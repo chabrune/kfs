@@ -366,3 +366,23 @@ The **Flags** in the Segment Descriptor provide further characteristics of the s
 | **0** | **Reserved** | Reserved for future use, typically left as 0 |
 
 ---
+
+
+# IDT - Interrupt Descriptor Table
+
+- Interrupt is a sort of signal that tells the CPU to stop whatever it's doing handle that interrupt and go back to his state.
+
+Interrupt -> ISR (interrupt service routine).
+We want to the CPU how should it react to those interrupts - to which ISR that we define are going to handle that interrupt
+
+2 bytes - offset_low
+2 bytes - GDT code selector
+1 byte  - IST (interrupt stack table) could be 0
+1 byte  - Attributes/Flags | Present bit (1 bit) | DPL (desired previlege level) (2 bits) | Reserved bit (1 bit) | Type (4 bits)
+
+All 256 entries correspond to a specific interrupt 
+
+Present bit = We might have some interrupts that we don't want to set any IRS for
+DPL         = ring
+Type        = There are two types of gates 
+   - Interrupt gate = 1110

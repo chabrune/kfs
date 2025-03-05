@@ -3,18 +3,19 @@
 #include "kernel.h"
 
 typedef struct {
-    uint16_t BaseLow;         // Bits 0-15 : Adresse basse du handler d'interruption
-    uint16_t SegmentSelector; // Bits 16-31 : Sélecteur de segment (0x08 pour le kernel)
-    uint8_t Reserved;         // Bits 32-39 : Toujours 0 (réservé par Intel)
-    uint8_t Flags;            // Bits 40-47 : Type et attributs (DPL, P, Type)
-    uint16_t BaseHigh;        // Bits 48-63 : Adresse haute du handler d'interruption
-
+    uint16_t offset_low;   // Offset bits 0-15
+    uint16_t selector;     // Segment selector (GDT)
+    uint8_t ist;           // Interrupt Stack Table (0 si pas utilisé)
+    uint8_t flags;     // Flags et type d'entrée
+    uint16_t offset_mid;   // Offset bits 16-31
+    uint32_t zero;         // Réservé
 } __attribute__((packed)) IDTEntry;
+
 
 
 typedef struct {
     uint16_t Limit;
-    IDTEntry* Ptr;
+    uint32_t base;
 } __attribute__((packed)) IDTDescriptor;
 
 typedef enum {
