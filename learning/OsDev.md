@@ -1,7 +1,7 @@
 
 ---
 
-# 1. What is an OS?
+# What is an OS?
 
 An OS (Operating System) is a software that allows the user to run programs while managing I/O devices, memory, CPU time, and data.
 
@@ -31,7 +31,7 @@ The **bootloader** boots the kernel.
 
 ---
 
-# 2. Booting
+# Booting
 
 ### What happens when you press the power button on a computer:
 - The **BIOS** (Basic Input/Output System) is launched. It is responsible for booting and basic I/O operations.
@@ -370,19 +370,100 @@ The **Flags** in the Segment Descriptor provide further characteristics of the s
 
 # IDT - Interrupt Descriptor Table
 
-- Interrupt is a sort of signal that tells the CPU to stop whatever it's doing handle that interrupt and go back to his state.
+## Introduction
 
-Interrupt -> ISR (interrupt service routine).
-We want to the CPU how should it react to those interrupts - to which ISR that we define are going to handle that interrupt
+An **interrupt** is a signal that tells the CPU to stop whatever it's doing, handle that interrupt, and then return to its previous state.
 
-2 bytes - offset_low
-2 bytes - GDT code selector
-1 byte  - IST (interrupt stack table) could be 0
-1 byte  - Attributes/Flags | Present bit (1 bit) | DPL (desired previlege level) (2 bits) | Reserved bit (1 bit) | Type (4 bits)
+When an interrupt occurs, the CPU executes an **ISR (Interrupt Service Routine)**. We need to configure the CPU to know how it should react to these interrupts and which ISR should handle them.
 
-All 256 entries correspond to a specific interrupt 
+## IDT Entry Structure
 
-Present bit = We might have some interrupts that we don't want to set any IRS for
-DPL         = ring
-Type        = There are two types of gates 
-   - Interrupt gate = 1110
+Each entry in the IDT (Interrupt Descriptor Table) consists of the following fields:
+
+- **2 bytes** - Offset Low
+- **2 bytes** - GDT Code Selector (usually 8)
+- **1 byte**  - IST (Interrupt Stack Table), could be 0
+- **1 byte**  - Attributes/Flags:
+  - **Present bit (1 bit)**: Indicates if the interrupt is active.
+  - **DPL (Desired Privilege Level) (2 bits)**: Specifies the privilege level (Ring 0-3).
+  - **Reserved bit (1 bit)**
+  - **Type (4 bits)**:
+    - **Interrupt Gate** = `1110`
+    - **Trap Gate** = `1111`
+- **2 bytes** - Offset Mid
+- **4 bytes** - Offset High
+- **4 bytes** - Reserved/Zero
+
+All **256 entries** correspond to a specific interrupt.
+
+### Attributes Example
+
+If we want to set an attribute, we can use a magic number like:
+
+```
+1000 1110 = 0x8E
+```
+
+This value represents an **Interrupt Gate** with **DPL 0** and **Present bit set**.
+
+## IDTR - Interrupt Descriptor Table Register
+
+The **IDTR (Interrupt Descriptor Table Register)** stores the size and address of the IDT.
+
+### IDT Size Calculation
+
+```
+Size of IDT = 16 bytes * 256 = 4096 - 1 bytes (0xFFF)
+```
+
+The IDTR always holds **two values**:
+1. **Size of the IDT**
+2. **Address of the IDT**
+
+## Loading the IDT
+
+To load the IDT, we use the `LIDT` instruction, providing it with the IDT address. After loading, we must **enable interrupts** using the `STI` instruction.
+
+## Handling an Interrupt
+
+When an interrupt is triggered, we must restore the CPU state after handling it. The CPU state is represented by the **values of all its registers**.
+
+### Steps to Handle an Interrupt:
+1. Push all necessary registers onto the stack.
+2. Save the stack pointer.
+3. Call the C handler.
+4. Use registers if needed.
+5. Restore the CPU state.
+
+## Interrupt Controllers
+
+### 8259 PIC (Programmable Interrupt Controller)
+
+The **8259 PIC** is a legacy interrupt controller, but it is not widely used today. Modern systems have replaced it with **APIC (Advanced Programmable Interrupt Controller)**.
+
+# APIC (Advanced Programmable Interrupt Controller)
+
+APIC is the modern replacement for the legacy PIC and provides better interrupt management, especially in multi-core processors. 8259A Legacy Mode.
+
+- Master PIC
+- Slaver PIC
+
+We communicate to those PIC through the I/O bus (in out)
+What are the ports of the Master PIC and Slave PIC ?
+
+```
+PIC    | COMMAND | DATA
+-----------------------
+MASTER |  0x20   | 0x21
+SLAVE  |  0xA0   | 0xA1
+```
+
+### What Information Should We Send to the PIC?
+
+- **Remapping the PIC**
+
+### Why Is Remapping Necessary?
+
+The IDT has **256 entries**, and the first **16 entries** are reserved for **IRQ(Interrupt Request) channels**. The CPU uses these IRQs for handling hardware requests. By default, the legacy PIC maps IRQ 0-7 to IDT entries **0x08-0x0F** and IRQ 8-15 to **0x70-0x77**. However, the first 32 entries (0x00-0x1F) are **reserved for CPU exceptions**.
+
+To avoid conflicts, we **remap the PIC** so that IRQs start from **IDT entry 0x20 (32)** for IRQ 0-7 and **IDT entry 0x28 (40)** for IRQ 8-15. This ensures that the first 32 IDT entries remain reserved for exceptions.

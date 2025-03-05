@@ -53,7 +53,7 @@ void                set_cursor(int x, int y);
 void                putc(char c);
 void                puts(const char *s);
 void                PIC_remap();
-void                keyboard_callback(uint8_t scancode);
+// void                keyboard_callback(uint8_t scancode);
 
 
 

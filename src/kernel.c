@@ -123,15 +123,17 @@ void puts(const char *s)
     }
 }
 
-void keyboard_callback() {
-    uint8_t scancode = inb(0x60);
-    ft_printk("%d", scancode);
-
-    if (scancode & 0x80) {
-        // Touche relâchée
-    } else {
-        putc('A'); // À améliorer avec un mapping scancode -> ASCII
+void keyboard_callback(uint8_t scancode)
+{
+    char c = ' ';
+    switch (scancode) {
+        case 0x1E: c = 'a'; break;
+        case 0x30: c = 'b'; break;
+        case 0x2E: c = 'c'; break;
+        case 0x1C: c = '\n'; break;
+        default: return;
     }
+    putc(c);
 }
 
 
