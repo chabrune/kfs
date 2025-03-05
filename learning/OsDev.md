@@ -467,3 +467,91 @@ SLAVE  |  0xA0   | 0xA1
 The IDT has **256 entries**, and the first **16 entries** are reserved for **IRQ(Interrupt Request) channels**. The CPU uses these IRQs for handling hardware requests. By default, the legacy PIC maps IRQ 0-7 to IDT entries **0x08-0x0F** and IRQ 8-15 to **0x70-0x77**. However, the first 32 entries (0x00-0x1F) are **reserved for CPU exceptions**.
 
 To avoid conflicts, we **remap the PIC** so that IRQs start from **IDT entry 0x20 (32)** for IRQ 0-7 and **IDT entry 0x28 (40)** for IRQ 8-15. This ensures that the first 32 IDT entries remain reserved for exceptions.
+
+```
+   0 Timer            8 Real Time Clock
+   1 Keyboard         9 General I/O
+   2 PIC 2           10 General I/O
+   3 COM 2           11 General I/O
+   4 COM 1           12 General I/O
+   5 LPT 2           13 Coprocessor
+   6 Floppy disk     14 IDE Bus
+   7 LPT 1           15 IDE Bus
+```
+
+The first thing we want to do is to send reinitialize code to both master and slave PIC. 
+Then we want to input some new data for remapping the PIC.
+We have to specify which IRQs  will be handled by which programmable interrupt controller.
+**One programmable interrupt controller can handle 8 IRQs at the time**
+
+The most standard way to manage this is to let the Master PIC have everything from 0 to 7 and the Slaver PIC have from 8 to 15.
+
+To the master we have to send the IRQ because one of the IRQs of the master has to be reserved by a slave that's why it's called the slave.
+
+### **Connection Between the Master PIC and the Slave PIC**  
+
+The **8259 PIC (Programmable Interrupt Controller)** architecture uses **two PIC controllers** to manage up to **16 IRQs**:  
+- **The Master PIC** (handles IRQs 0 to 7)  
+- **The Slave PIC** (handles IRQs 8 to 15)  
+
+However, the **CPU can only communicate with the Master PIC**. So, for the CPU to receive interrupts from the **Slave PIC**, they must be routed **through the Master PIC**.  
+
+### **Why Is One IRQ of the Master Reserved for the Slave?**  
+
+The **Master PIC** and the **Slave PIC** must be connected to work together. This connection is established through **IRQ2 of the Master PIC**.  
+
+- **IRQ2 of the Master PIC** is reserved to receive interrupts from the **Slave PIC**.  
+- When a device connected to the **Slave PIC** triggers an interrupt (e.g., a mouse on **IRQ12**), the **Slave PIC** sends this interrupt through **IRQ2 of the Master PIC**.  
+- The **Master PIC** then notifies the CPU that **IRQ2** has been activated, and the CPU looks up the corresponding **Interrupt Service Routine (ISR)** in the IDT.   
+
+To avoid conflicts, we **remap the PIC IRQs** starting from **interrupt 32 (0x20 in hexadecimal)**.  
+
+After remapping:  
+- **IRQ 0 - 7 (Master PIC) → Interrupts 32 - 39**  
+- **IRQ 8 - 15 (Slave PIC) → Interrupts 40 - 47**  
+
+This means that:  
+- **IRQ2 of the Master PIC** corresponds to **interrupt 34 (0x22)** and is still used to receive interrupts from the **Slave PIC**.  
+
+- Important things : 
+
+Why send 4 instead of 2 to the Master PIC (IRQ2 is number 2 not 4).
+
+
+   - In binary, **IRQ2** is represented as `00000010` (`0x2`).  
+   - However, when configuring the Master PIC with **ICW3 (Initialization Command Word 3)**, we don’t provide the IRQ number directly.  
+   - Instead, we use a **bitmask** to indicate **which IRQ line is reserved for the Slave PIC**.  
+   - **Each bit in the value corresponds to an IRQ line**:
+     - Bit `0` → IRQ0  
+     - Bit `1` → IRQ1  
+     - Bit `2` → IRQ2  
+     - Bit `3` → IRQ3  
+     - etc.  
+
+   - Since the Slave is connected to **IRQ2**, we **set bit 2 to `1`**, which results in `00000100` (`0x4`).  
+
+### **Why Does the Slave Receive `2` Instead of `4`?**  
+For the **Slave PIC**, ICW3 is used to define **its identification in the cascade setup**.  
+- Since the Slave is **connected through IRQ2** of the Master, it identifies itself with **ID `2`**.  
+- That’s why we send **`2` (`0x2`)** directly to the Slave instead of using a bitmask.  
+
+- To the **Master PIC**, we send `4` (`0b00000100`) → **Bitmask** indicating that the Slave is connected via **IRQ2**.  
+- To the **Slave PIC**, we send `2` (`0x2`) → **Its cascade identification number**.  
+
+
+
+```
+Send to both Master and Slave command 0x11 to reinit their values.
+Then send data 0 to the Master and 8 for the Slave (Means they will handle respectively from 0-7 and 8-15).
+Then send data 4 and 2 (bitmask and cascade)
+Then send data 1 and 1 (8086 CPU mode)
+Last we want to mask all the interruptions and only unmask the IRQ that we actually need.
+If we want to mask all the IRQs we just simply send data 0xFF to both Master and Slave port.
+
+         Master         |      Slave
+Bits : 1 1 1 1 1 1 1 1  | 1 1  1  1  1  1  1  1
+IRQs : 0 1 2 3 4 5 6 7  | 8 9 10 11 12 13 14 15
+
+Finally we send an End of Interrupt (EOI) signal, we write the 0x20 command to the 0x20 command port of the Master PIC.
+```
+
