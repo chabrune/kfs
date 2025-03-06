@@ -29,8 +29,11 @@ typedef unsigned long long uint64_t;
 
 void                init (void);
 void                kmain (void);
-void                outb(uint16_t port, uint8_t val);
 void                putc(char c);
 void                puts(const char *s);
 void                remap_pic(void);
 void                set_cursor(int x, int y);
+extern uint8_t      keyboard_ISR();
+extern void         default_ISR();
+void                keyboard_handler();
+

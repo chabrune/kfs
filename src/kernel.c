@@ -9,9 +9,9 @@ int xpos;
 int ypos;
 uint8_t text_color = VGA_COLOR(VGA_LIGHT_RED, VGA_BLACK);
 
-
 void init(void)
 {
+    enable_cursor(0, 15);
     int i;
     for (i = 0; i < COLUMNS * LINES; i++)
     {
@@ -65,53 +65,44 @@ void set_cursor(int x, int y) {
     outb(0x3D4, 0x0F);
     outb(0x3D5, (uint8_t)pos);
 }
-/*
-__asm__ ("instruction" : output_operands : input_operands : clobbers);
-constraint modifiers : 
-a = specify eax
-N = int 0-255 ? 
-d = specify edx
-*/
-// static inline void outb(uint16_t port, uint8_t val)
-// {
-//     __asm__ volatile (
-//         "out dx, al"
-//         :
-//         : "a"(val), "Nd"(port)
-//     );
-// }
 
-/*
-    Lit le port DX et met la valeur dans AL
-    La sortie (AL) est assignée à 'ret'
-    Le port est passé en entrée
-*/
-static inline uint8_t inb(uint16_t port)
+void enable_cursor(uint8_t cursor_start, uint8_t cursor_end)
 {
-    uint8_t ret;
-    __asm__ volatile (
-        "in al, dx"
-        : "=a"(ret)
-        : "Nd"(port)
-    );
-    return ret;
+    outb(0x3D4, 0x0A);
+    outb(0x3D5, (inb(0x3D5) & 0xC0) | cursor_start);
+    outb(0x3D4, 0x0B);
+    outb(0x3D5, (inb(0x3D5) & 0xE0) | cursor_end);
+}
+
+void io_wait(void) {
+    outb(0x80, 0);
 }
 
 void    remap_pic(void)
 {
     outb(0x20, 0x11);
+    io_wait();
     outb(0xA0, 0x11);
+    io_wait();
 
     outb(0x21, 0x20);
+    io_wait();
+
     outb(0xA1, 0x28);
+    io_wait();
 
     outb(0x21, 0x2);
+    io_wait();
     outb(0xA1, 0x4);
+    io_wait();
 
     outb(0x21, 0x1);
+    io_wait();
     outb(0xA1, 0x1);
+    io_wait();
 
-    outb(0x21, 0xFF);
+    outb(0x21, 0xFD);
+    io_wait();
     outb(0xA1, 0xFF);
 }
 
@@ -125,15 +116,13 @@ void puts(const char *s)
     }
 }
 
-IDTEntry g_IDT[256] = {0, 0, 0, 0};
+IDTEntry g_IDT[256];
 IDTR g_IDTR;
 
 void init_idtr() {
     g_IDTR.limit = sizeof(g_IDT) - 1;
     g_IDTR.base = (uint32_t) &g_IDT;
 }
-
-extern void load_IDT(IDTR *idtr);
 
 void    setGate(void *handler, uint16_t codeSelect, uint8_t flags, int interrupt)
 {
@@ -143,15 +132,31 @@ void    setGate(void *handler, uint16_t codeSelect, uint8_t flags, int interrupt
     g_IDT[interrupt].code_selector = codeSelect;
     g_IDT[interrupt].offset_high = ((uint32_t)handler >> 16) & 0xFFFF; 
     g_IDT[interrupt].flags = flags;
+    g_IDT[interrupt].reserved = 0;
+}
+
+void keyboard_handler()
+{
+    uint8_t scancode = inb(0x60);
+    char c = ' ';
+    switch (scancode) {
+        case 0x1E: c = 'a'; break;
+        case 0x30: c = 'b'; break;
+        case 0x2E: c = 'c'; break;
+        case 0x1C: c = '\n'; break;
+        default: return;
+    }
+    putc(c);
 }
 
 void kmain(void)
 {
-    remap_pic();
     init_idtr();
+    setGate(&keyboard_ISR, 0x8, IDT_FLAG_PRESENT | IDT_FLAG_RING0 | IDT_FLAG_GATE_32BIT_INT, 33);
     load_IDT(&g_IDTR);
+    remap_pic();
     init();
     puts("FuckOs>$");
-    asm __inline__ ("sti");
+    asm __volatile__("sti");
     while(1);
 }
