@@ -130,9 +130,9 @@ void    setGate(void *handler, uint16_t codeSelect, uint8_t flags, int interrupt
     //   0x12345678 =   0001 0010 0011 0100 0101 0110 0111 1000
     //         &        0000 0000 0000 0000 1111 1111 1111 1111
     g_IDT[interrupt].code_selector = codeSelect;
-    g_IDT[interrupt].offset_high = ((uint32_t)handler >> 16) & 0xFFFF; 
-    g_IDT[interrupt].flags = flags;
     g_IDT[interrupt].reserved = 0;
+    g_IDT[interrupt].flags = flags;
+    g_IDT[interrupt].offset_high = ((uint32_t)handler >> 16) & 0xFFFF; 
 }
 
 void keyboard_handler()
@@ -152,11 +152,13 @@ void keyboard_handler()
 void kmain(void)
 {
     init_idtr();
-    setGate(&keyboard_ISR, 0x8, IDT_FLAG_PRESENT | IDT_FLAG_RING0 | IDT_FLAG_GATE_32BIT_INT, 33);
+    setGate(&keyboard_ISR, 0x8, IDT_FLAG_PRESENT | IDT_FLAG_RING0 | IDT_FLAG_GATE_32BIT_INT, 0x21);
     load_IDT(&g_IDTR);
     remap_pic();
     init();
     puts("FuckOs>$");
+    ft_printk("%d", g_IDTR.limit);
+
     asm __volatile__("sti");
     while(1);
 }
