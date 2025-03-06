@@ -38,8 +38,9 @@ $(BUILD_DIR)/%.o: $(SRC_DIR)/%.s
 	@mkdir -p $(dir $@)
 	$(NASM) $(NASM_FLAGS) $< -o $@ 
 
-run: $(BUILD_DIR)/$(NAME)
-	qemu-system-i386 -kernel $(BUILD_DIR)/$(NAME)
+
+run: $(BUILD_DIR)/$(NAME) | iso
+	qemu-system-i386 -cdrom $(ISO)
 
 clean:
 	@rm -rf $(BUILD_DIR) $(ISO) $(ISO_DIR)
@@ -54,8 +55,8 @@ iso: all
 	@grub-mkrescue -o $(NAME).iso --compress=xz iso
 
 debug: all
-	qemu-system-i386 -kernel $(BUILD_DIR)/$(NAME) -s & \
+	qemu-system-i386 -cdrom $(ISO) -s & \
 	sleep 2 && \
-	gdb -ex "target remote :1234" $(BUILD_DIR)/$(NAME)
+	gdb -ex "target remote :1234" kfs.iso
 
 .PHONY: all clean run re

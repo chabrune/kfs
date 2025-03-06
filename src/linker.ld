@@ -20,7 +20,6 @@ SECTIONS
 		*(COMMON)
 		*(.bss)
 	}
-	
 	.stack ALIGN(16) : 
 	{
 		. = . + 4096;

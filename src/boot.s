@@ -12,8 +12,6 @@ global _start
 section .text
 _start:
    mov esp, stack_top
+   cli
    call kmain
-   hang:
-      cli   ; Désactive les interruptions / Protected mode
-      hlt   ; Met le processeur en mode veille
-      jmp hang
+   hlt
