@@ -29,7 +29,8 @@ typedef unsigned long long uint64_t;
 
 void                init (void);
 void                kmain (void);
-static inline void  outb(uint16_t port, uint8_t val);
+void                outb(uint16_t port, uint8_t val);
 void                putc(char c);
 void                puts(const char *s);
-void                 remap_pic(void);
+void                remap_pic(void);
+void                set_cursor(int x, int y);

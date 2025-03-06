@@ -13,5 +13,5 @@ typedef struct
 typedef struct
 {
     uint16_t    limit;
-    IDTEntry    *ptr; 
+    uint32_t    base;
 } __attribute__((packed)) IDTR ;
