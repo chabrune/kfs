@@ -37,3 +37,5 @@ extern uint8_t      keyboard_ISR();
 extern void         default_ISR();
 void                keyboard_handler();
 
+extern void     outb(uint16_t port, uint8_t val);
+extern uint8_t  inb(uint16_t port);
