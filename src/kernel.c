@@ -74,35 +74,21 @@ void enable_cursor(uint8_t cursor_start, uint8_t cursor_end)
     outb(0x3D5, (inb(0x3D5) & 0xE0) | cursor_end);
 }
 
-void io_wait(void) {
-    outb(0x80, 0);
-}
-
-void    remap_pic(void)
+void remap_pic(void)
 {
     outb(0x20, 0x11);
-    io_wait();
     outb(0xA0, 0x11);
-    io_wait();
 
     outb(0x21, 0x20);
-    io_wait();
-
     outb(0xA1, 0x28);
-    io_wait();
 
     outb(0x21, 0x2);
-    io_wait();
     outb(0xA1, 0x4);
-    io_wait();
 
     outb(0x21, 0x1);
-    io_wait();
     outb(0xA1, 0x1);
-    io_wait();
 
     outb(0x21, 0xFD);
-    io_wait();
     outb(0xA1, 0xFF);
 }
 
@@ -119,20 +105,16 @@ void puts(const char *s)
 IDTEntry g_IDT[256];
 IDTR g_IDTR;
 
-void init_idtr() {
-    g_IDTR.limit = sizeof(g_IDT) - 1;
-    g_IDTR.base = (uint32_t) &g_IDT;
-}
 
-void    setGate(void *handler, uint16_t codeSelect, uint8_t flags, int interrupt)
+void setGate(uint32_t handler, uint16_t codeSelect, uint8_t flags, int interrupt)
 {
-    g_IDT[interrupt].offset_low = ((uint32_t)handler) & 0xFFFF; 
+    g_IDT[interrupt].offset_low = (handler & 0xFFFF); 
     //   0x12345678 =   0001 0010 0011 0100 0101 0110 0111 1000
     //         &        0000 0000 0000 0000 1111 1111 1111 1111
     g_IDT[interrupt].code_selector = codeSelect;
     g_IDT[interrupt].reserved = 0;
     g_IDT[interrupt].flags = flags;
-    g_IDT[interrupt].offset_high = ((uint32_t)handler >> 16) & 0xFFFF; 
+    g_IDT[interrupt].offset_high = (handler >> 16) & 0xFFFF; 
 }
 
 void keyboard_handler()
@@ -147,18 +129,39 @@ void keyboard_handler()
         default: return;
     }
     putc(c);
+    outb(0x20, 0x20);
+} 
+
+// void init_idt_entry(uint16_t selector, uint32_t offset, uint8_t type, idt_entry_t * entry) {
+//     entry->isr_offset_low = (offset & 0xFFFF); // extract low part of uint32 to uint16
+//     entry->selector = selector;
+//     entry->zero = 0;
+//     entry->type = type;
+//     entry->isr_offset_high = (offset & 0xFFFF0000) >> 16; // high part
+
+// }
+
+void init_idt() {
+    g_IDTR.base = (uint32_t)&g_IDT;
+    g_IDTR.limit = sizeof(g_IDT) - 1;
+
+    setGate((uint32_t)keyboard_ISR, 0x8, IDT_FLAG_PRESENT | IDT_FLAG_RING0 | IDT_FLAG_GATE_32BIT_INT, 0x21);
+
+    load_IDT(g_IDTR);
+    // asm("lidt (%0)" : : "r" (&g_IDTR));
+
+    // asm("lidtl (g_IDTR)");
 }
 
 void kmain(void)
 {
-    init_idtr();
-    setGate(&keyboard_ISR, 0x8, IDT_FLAG_PRESENT | IDT_FLAG_RING0 | IDT_FLAG_GATE_32BIT_INT, 0x21);
-    load_IDT(&g_IDTR);
-    remap_pic();
+    init_idt();
     init();
+    remap_pic();
     puts("FuckOs>$");
-    ft_printk("%d", g_IDTR.limit);
-
-    asm __volatile__("sti");
+    // debug_IDT(0x21);
+    asm volatile(
+        "sti"
+    );
     while(1);
 }

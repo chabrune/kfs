@@ -33,9 +33,12 @@ void                putc(char c);
 void                puts(const char *s);
 void                remap_pic(void);
 void                set_cursor(int x, int y);
-extern uint8_t      keyboard_ISR();
-extern void         default_ISR();
+extern void  keyboard_ISR();
+extern void default_ISR();
 void                keyboard_handler();
 
-extern void     outb(uint16_t port, uint8_t val);
-extern uint8_t  inb(uint16_t port);
+extern void default_ISR(void);
+void outb(uint32_t port, uint8_t value);
+uint8_t inb(uint32_t port);
+void isr_keyboard_handler();
+void _isr_keyboard();

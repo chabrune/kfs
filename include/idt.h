@@ -17,9 +17,7 @@ typedef struct
     uint32_t    base;
 } __attribute__((packed)) IDTR ;
 
-extern void     outb(uint16_t port, uint8_t val);
-extern uint8_t  inb(uint16_t port);
-extern void     load_IDT(IDTR *idtr);
+extern void     load_IDT(IDTR idtr);
 
 
 typedef enum {
