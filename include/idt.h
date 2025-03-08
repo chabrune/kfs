@@ -17,18 +17,19 @@ typedef struct
     uint32_t    base;
 } __attribute__((packed)) IDTR ;
 
-extern void     load_IDT(IDTR idtr);
-
-
 typedef enum {
-    // tap gate contain address of current instruction (so it can be retried)
-    // interrupt contain adress of next instruction
     IDT_FLAG_GATE_32BIT_INT         = 0xE,
     IDT_FLAG_GATE_32BIT_TRAP        = 0xF,
 
-    // rings are privileges levels
     IDT_FLAG_RING0                  = (0 << 5),
     IDT_FLAG_RING3                  = (3 << 5),
 
     IDT_FLAG_PRESENT                = 0x80,
 } IDT_FLAGS;
+
+extern void         load_IDT(IDTR idtr);
+extern void         keyboard_ISR();
+void                keyboard_handler();
+void                setGate(uint32_t handler, uint16_t codeSelect, uint8_t flags, int interrupt);
+void                remap_pic(void);
+void                init_idt();
