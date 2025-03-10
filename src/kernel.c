@@ -2,6 +2,7 @@
 
 void kmain(void)
 {
+    init_gdt();
     init_idt();
     init();
     remap_pic();

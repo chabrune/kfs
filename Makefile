@@ -39,8 +39,8 @@ $(BUILD_DIR)/%.o: $(SRC_DIR)/%.s
 	$(NASM) $(NASM_FLAGS) $< -o $@ 
 
 
-run: $(BUILD_DIR)/$(NAME)
-	qemu-system-i386 -kernel $(BUILD_DIR)/$(NAME)
+run: $(BUILD_DIR)/$(NAME) | iso
+	qemu-system-i386 -cdrom $(ISO)
 
 clean:
 	@rm -rf $(BUILD_DIR) $(ISO) $(ISO_DIR)
