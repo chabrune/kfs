@@ -555,3 +555,126 @@ IRQs : 0 1 2 3 4 5 6 7  | 8 9 10 11 12 13 14 15
 Finally we send an End of Interrupt (EOI) signal, we write the 0x20 command to the 0x20 command port of the Master PIC.
 ```
 
+---
+
+# LD SCRIT FILE
+
+- VMA =  virtual memory address.
+- LDA = load memory address.
+
+```nasm
+chabrune@k2r1p4:Desktop/kfs ‹main*›$ objdump -h build/kfs
+
+build/kfs:     file format elf32-i386
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .text         00000a66  00200000  00200000  00001000  2**12
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  1 .text.__x86.get_pc_thunk.bx 00000004  00200a66  00200a66  00001a66  2**0
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  2 .text.__x86.get_pc_thunk.ax 00000004  00200a6a  00200a6a  00001a6a  2**0
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  3 .text.__x86.get_pc_thunk.si 00000004  00200a6e  00200a6e  00001a6e  2**0
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  4 .text.__x86.get_pc_thunk.di 00000004  00200a72  00200a72  00001a72  2**0
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  5 .rodata       00000080  00201000  00201000  00002000  2**12
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+  6 .eh_frame     00000548  00201080  00201080  00002080  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+  7 .rodata.str1.1 0000001c  002015c8  002015c8  000025c8  2**0
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+  8 .data         00000008  00202000  00202000  00003000  2**12
+                  CONTENTS, ALLOC, LOAD, DATA
+  9 .got.plt      0000000c  00202008  00202008  00003008  2**2
+                  CONTENTS, ALLOC, LOAD, DATA
+ 10 .bss          000008c0  00203000  00203000  00003014  2**12
+                  ALLOC
+ 11 .stack        00001000  002038c0  002038c0  00003014  2**0
+                  ALLOC
+ 12 .debug_info   0000144f  00000000  00000000  00003014  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+ 13 .debug_abbrev 00000b40  00000000  00000000  00004463  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+ 14 .debug_loc    00000aa6  00000000  00000000  00004fa3  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+ 15 .debug_aranges 00000180  00000000  00000000  00005a49  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+ 16 .debug_ranges 00000198  00000000  00000000  00005bc9  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+ 17 .debug_line   00000c8a  00000000  00000000  00005d61  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+ 18 .debug_str    000005b6  00000000  00000000  000069eb  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+ 19 .comment      0000002b  00000000  00000000  00006fa1  2**0
+
+SYMBOL TABLE:
+00000000 l    df *ABS*  00000000 src/boot.s
+00000000 l    df *ABS*  00000000 gdt.c
+00000000 l    df *ABS*  00000000 idt.c
+00201000 l     O .rodata        00000080 scancode_to_char.0
+00000000 l    df *ABS*  00000000 kernel.c
+00000000 l    df *ABS*  00000000 vga.c
+00000000 l    df *ABS*  00000000 ft_itoa.c
+00203888 l     O .bss   0000000c buffer.0
+00000000 l    df *ABS*  00000000 ft_memcpy.c
+00000000 l    df *ABS*  00000000 ft_memset.c
+00000000 l    df *ABS*  00000000 ft_printk.c
+002038a0 l     O .bss   00000020 buffer.0
+00000000 l    df *ABS*  00000000 ft_strcat.c
+00000000 l    df *ABS*  00000000 ft_strcmp.c
+00000000 l    df *ABS*  00000000 ft_strcpy.c
+00000000 l    df *ABS*  00000000 ft_strlen.c
+00000000 l    df *ABS*  00000000 src/gidt.s
+00000000 l    df *ABS*  00000000 src/inb.s
+00000000 l    df *ABS*  00000000 src/keyboard.s
+00000000 l    df *ABS*  00000000 src/lidt.s
+00000000 l    df *ABS*  00000000 src/outb.s
+00000000 l    df *ABS*  00000000 src/reloadSegments.s
+00200a57 l       .text  00000000 reload_CS
+00000000 l    df *ABS*  00000000 
+00202008 l     O .got.plt       00000000 _GLOBAL_OFFSET_TABLE_
+00200a10 g       .text  00000000 inb
+00200a6e g     F .text.__x86.get_pc_thunk.si    00000000 .hidden __x86.get_pc_thunk.si
+00203884 g     O .bss   00000004 xpos
+00200a72 g     F .text.__x86.get_pc_thunk.di    00000000 .hidden __x86.get_pc_thunk.di
+00200980 g     F .text  00000039 ft_strcpy
+00203060 g     O .bss   00000006 g_IDTR
+00200540 g     F .text  00000034 puts
+00200940 g     F .text  00000038 ft_strcmp
+00200a6a g     F .text.__x86.get_pc_thunk.ax    00000000 .hidden __x86.get_pc_thunk.ax
+00200a50 g       .text  00000000 reloadSegments
+00200220 g     F .text  0000004e keyboard_handler
+002003e0 g     F .text  00000063 set_cursor
+00203020 g     O .bss   00000040 g_GDT
+00200450 g     F .text  0000007c enable_cursor
+00203080 g     O .bss   00000800 g_IDT
+00200690 g     F .text  00000035 ft_memcpy
+00200a30 g       .text  00000000 load_IDT
+002009f0 g       .text  00000000 _start
+002000d0 g     F .text  0000003e set_GDT_Gate
+002001b0 g     F .text  00000067 init_idt
+00200a66 g     F .text.__x86.get_pc_thunk.bx    00000000 .hidden __x86.get_pc_thunk.bx
+00200580 g     F .text  0000003c ft_lenght
+00200010 g     F .text  000000c0 init_gdt
+002048c0 g       .stack 00000000 stack_top
+002004d0 g     F .text  00000061 init
+00200a40 g       .text  00000000 outb
+002005c0 g     F .text  000000c4 ft_itoa
+002002f0 g     F .text  000000eb putc
+00200a20 g       .text  00000000 keyboard_ISR
+00200110 g     F .text  00000095 remap_pic
+00203880 g     O .bss   00000004 ypos
+00200780 g     F .text  00000162 ft_printk
+00202000 g     O .data  00000001 text_color
+00200700 g     F .text  0000007a ft_itoa_base
+00202004 g     O .data  00000004 video
+00200270 g     F .text  0000003c setGate
+002008f0 g     F .text  00000048 ft_strcat
+00203000 g     O .bss   00000006 g_GDTR
+002009c0 g     F .text  00000021 ft_strlen
+002002b0 g     F .text  00000038 kmain
+00200a00 g       .text  00000000 load_GDT
+002006d0 g     F .text  0000002e ft_memset
+```
