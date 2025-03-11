@@ -51,7 +51,6 @@ iso: all
 	mkdir -p iso/boot/grub
 	cp build/kfs iso/boot
 	cp src/grub.cfg iso/boot/grub
-	grub-file --is-x86-multiboot iso/boot/$(NAME)
 	@grub-mkrescue -o $(NAME).iso --compress=xz iso
 
 debug: all

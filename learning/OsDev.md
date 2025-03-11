@@ -714,3 +714,38 @@ SYMBOL TABLE:
 | `.bss`    | Uninitialized global variables |
 | `.stack`  | kernel stack |
 
+
+### **Where is the Bootloader Loaded into Memory?**  
+
+The **bootloader (GRUB)** is typically loaded **by the BIOS**. Here’s how it works in memory:
+
+---
+
+### **1. Initial Bootloader Loading**
+- When a PC boots in **BIOS mode**, the **MBR (Master Boot Record)** is loaded at **0x7C00** by the BIOS.
+- The **bootloader (e.g., GRUB)** then takes control and loads its own files.
+
+---
+
+### **2. Where Does GRUB Load the Kernel?**
+- GRUB loads the kernel at the address defined in your **linker script**.
+- In your case, the kernel will be loaded at **0x200000 (2 MiB).**
+
+---
+
+### **Memory Layout During Boot**
+| Memory Address       | Content |
+|----------------------|---------|
+| **0x00000000 - 0x000003FF** | IVT (Interrupt Vector Table) |
+| **0x00000400 - 0x000004FF** | BDA (BIOS Data Area) |
+| **0x00000500 - 0x00007BFF** | Free area for BIOS and miscellaneous data |
+| **0x00007C00** | **MBR (Primary bootloader, 512 bytes)** |
+| **0x00007E00 - 0x0009FFFF** | Secondary bootloader (GRUB) |
+| **0x000A0000 - 0x000FFFFF** | Video memory and BIOS extensions |
+| **0x00100000 - 0x001FFFFF** | Free space (often used by GRUB) |
+| **0x00200000 (2 MiB)** | **Kernel loaded here (defined in the LD script)** |
+| **0x00300000 and beyond** | Other memory segments (stack, heap, etc.) |
+
+---
+
+- **After loading the kernel, GRUB transfers control to `_start`.**
