@@ -559,11 +559,38 @@ Finally we send an End of Interrupt (EOI) signal, we write the 0x20 command to t
 
 # LD SCRIT FILE
 
+- The linker combines input files into a single output file.The output file and each input file are in a special data format known as an object file format. The output file is often called an executable, but for our purposes we will also call it an object file. Each object file has, among other things, a list of sections. We sometimes refer to a section in an input file as an input section; similarly, a section in the output file is an output section. Each section in an object file has a name and a size. Most sections also have an associated block of data, known as the section contents. A section may be marked as loadable, which means that the contents should be loaded into memory when the output file is run. A section with no contents may be allocatable, which means that an area in memory should be set aside, but nothing in particular should be loaded there (in some cases this memory must be zeroed out). A section which is neither loadable nor allocatable typically contains some sort of debugging information. Every loadable or allocatable output section has two addresses. The first is the VMA, or virtual memory address. This is the address the section will have when the output file is run. The second is the LMA, or load memory address. This is the address at which the section will be loaded. In most cases the two addresses will be the same.
+
+- You can see the sections in an object file by using the objdump program with the ‘-h’ option. 
+
+- Every object file also has a list of symbols, known as the symbol table. A symbol may be defined or undefined. Each symbol has a name, and each defined symbol has an address, among other information. If you compile a C or C++ program into an object file, you will get a defined symbol for every defined function and global or static variable. Every undefined function or global variable which is referenced in the input file will become an undefined symbol. 
+
+- You can see the symbols in an object file by using the nm program, or by using the objdump program with the ‘-t’ option. 
+
 - VMA =  virtual memory address.
 - LDA = load memory address.
 
+- The simplest possible linker script has just one command: ‘SECTIONS’. You use the ‘SECTIONS’ command to describe the memory layout of the output file. 
+
 ```nasm
-chabrune@k2r1p4:Desktop/kfs ‹main*›$ objdump -h build/kfs
+SECTIONS
+{
+  . = 0x10000;
+  .text : { *(.text) }
+  . = 0x8000000;
+  .data : { *(.data) }
+  .bss : { *(.bss) }
+}
+```
+
+- The first line inside the ‘SECTIONS’ command of the above example sets the value of the special symbol ‘.’, which is the location counter. If you do not specify the address of an output section in some other way, the address is set from the current value of the location counter. The location counter is then incremented by the size of the output section. At the start of the ‘SECTIONS’ command, the location counter has the value ‘0’. 
+
+- The second line defines an output section, ‘.text’. Within the curly braces after the output section name, you list the names of the input sections which should be placed into this output section. The ‘*’ is a wildcard which matches any file name. The expression ‘*(.text)’ means all ‘.text’ input sections in all input files.
+- Since the location counter is ‘0x10000’ when the output section ‘.text’ is defined, the linker will set the address of the ‘.text’ section in the output file to be ‘0x10000’.
+- The remaining lines define the ‘.data’ and ‘.bss’ sections in the output file. The linker will place the ‘.data’ output section at address ‘0x8000000’. After the linker places the ‘.data’ output section, the value of the location counter will be ‘0x8000000’ plus the size of the ‘.data’ output section. The effect is that the linker will place the ‘.bss’ output section immediately after the ‘.data’ output section in memory. 
+
+```nasm
+chabrune@k2r1p4:Desktop/kfs ‹main*›$ objdump -ht build/kfs
 
 build/kfs:     file format elf32-i386
 
@@ -678,3 +705,12 @@ SYMBOL TABLE:
 00200a00 g       .text  00000000 load_GDT
 002006d0 g     F .text  0000002e ft_memset
 ```
+
+| Section   | Description |
+|-----------|------------|
+| `.text`   | Program code (CPU instructions) |
+| `.rodata` | Constant data (read-only) |
+| `.data`   | Initialized global variables |
+| `.bss`    | Uninitialized global variables |
+| `.stack`  | kernel stack |
+
