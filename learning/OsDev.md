@@ -749,3 +749,161 @@ The **bootloader (GRUB)** is typically loaded **by the BIOS**. Here’s how it w
 ---
 
 - **After loading the kernel, GRUB transfers control to `_start`.**
+
+
+---
+
+# Loading the Kernel
+
+The first thing an operating system does is launch its bootloader. The goal of the bootloader is essentially to load the kernel and prepare an environment for the kernel to function properly.
+
+## Boot Process Overview
+
+```
+| BOOTLOADER |  --->  | KERNEL |
+```
+
+### How the Bootloader Loads the Kernel
+
+Before understanding how the bootloader loads the kernel, it's important to understand how executables are made and what they are.
+
+#### Compilation and Linking Process
+
+At a fundamental level, source code files (`.c`) are just plain text. These files must go through multiple stages to become an executable kernel:
+
+1. **Compilation**: The compiler translates `.c` source code into assembly (`.asm`). This is a human-readable representation of machine instructions.
+2. **Assembly**: The assembler converts `.asm` files into machine code, producing object files (`.o`). These contain binary code but are not yet standalone executables.
+3. **Linking**: The linker takes multiple object files (`.o`) and combines them into a single executable file in the ELF (Executable and Linkable Format) format.
+
+```
+*.c  -->  COMPILER  -->  *.asm  -->  ASSEMBLER  -->  *.o  -->  LINKER  -->  .elf
+```
+
+A **flat binary** is a simple file format that contains raw binary data with no additional structure, used in low-level environments like operating systems or firmware. It doesn’t have sections, segments, or metadata.
+
+An **ELF (Executable and Linkable Format)** is a more sophisticated file format used in modern systems, especially in Linux. It contains sections (code, data, etc.), segments, and metadata, allowing for better memory management, debugging, dynamic linking, and compatibility across platforms.
+
+Linux use ELF
+Mac use Mach-O
+Windows use COM / PE / EXE 
+
+---
+
+## ELF
+
+An ELF (Executable and Linkable Format) file is organized into several sections, each serving a specific purpose. Here is a schematic representation of its structure:
+
+```
++---------------------+
+|      ELF Header     |  <-- Contains metadata about the file (type, architecture, etc.)
++---------------------+
+| Program Header Table|  <-- Describes program segments (loading into memory)
++---------------------+
+|       .text         |  <-- Section containing executable instructions (code)
++---------------------+
+|       .data         |  <-- Section containing initialized data (global variables)
++---------------------+
+|       .rodata       |  <-- Section containing read-only data (constants)
++---------------------+
+|       .bss          |  <-- Section for uninitialized data (reserved space)
++---------------------+
+| Section Header Table|  <-- Describes file sections (for linking)
++---------------------+
+```
+
+---
+
+### Program vs Process
+
+- **Program**: A passive entity stored on disk (ELF file).
+- **Process**: An active entity in memory during execution.
+
+---
+
+### Process Memory Layout
+
+When an ELF program is loaded into memory to become a process, it is mapped into the process's virtual address space. Here is what the typical memory layout looks like:
+
+```
++---------------------+  High Memory
+|      Stack          |  <-- Stack: local variables, function calls
+|         |           |
+|         v           |
++---------------------+
+|         ^           |
+|         |           |
+|      Heap           |  <-- Heap: dynamically allocated memory (malloc, etc.)
++---------------------+
+|      .data          |  <-- Initialized data (global variables)
++---------------------+
+|      .rodata        |  <-- Read-only data (constants)
++---------------------+
+|      .text          |  <-- Executable code (program instructions)
++---------------------+  Low Memory
+```
+
+---
+
+### Explanation of Memory Regions
+
+1. **Stack**:
+   - Used to store local variables, function return addresses, and function arguments.
+   - Grows downward (toward lower addresses).
+
+2. **Heap**:
+   - Used for dynamic memory allocation (via `malloc`, `new`, etc.).
+   - Grows upward (toward higher addresses).
+
+3. **.text (Code)**:
+   - Contains the executable instructions of the program.
+   - Read-only to prevent accidental modification of the code.
+
+4. **.data (Initialized Data)**:
+   - Contains initialized global and static variables.
+   - Read-write.
+
+5. **.rodata (Read-Only Data)**:
+   - Contains constants and string literals.
+   - Read-only.
+
+6. **.bss (Uninitialized Data)**:
+   - Contains uninitialized global variables.
+   - Space is reserved in memory, but no values are stored in the ELF file.
+
+---
+
+### Visual Diagram
+
+Here is a visual diagram to illustrate the memory mapping:
+
+```
++---------------------+  High Memory (0xFFFFFFFF)
+|      Stack          |
+|         |           |
+|         v           |
++---------------------+
+|         ^           |
+|         |           |
+|      Heap           |
++---------------------+
+|      .data          |
++---------------------+
+|      .rodata        |
++---------------------+
+|      .text          |
++---------------------+  Low Memory (0x00000000)
+```
+
+---
+
+### Summary
+
+- **ELF**: Passive structure of the program on disk.
+- **Process**: Active structure in memory during execution.
+- **Mapping**: The ELF file is loaded into memory, and its sections are mapped into the process's virtual address space.
+
+You can use this content in your `README.md` to explain the ELF structure and process memory layout. 😊
+
+--- 
+
+Feel free to copy and paste this into your `README.md` file!
