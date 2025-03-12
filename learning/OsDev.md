@@ -893,17 +893,3 @@ Here is a visual diagram to illustrate the memory mapping:
 |      .text          |
 +---------------------+  Low Memory (0x00000000)
 ```
-
----
-
-### Summary
-
-- **ELF**: Passive structure of the program on disk.
-- **Process**: Active structure in memory during execution.
-- **Mapping**: The ELF file is loaded into memory, and its sections are mapped into the process's virtual address space.
-
-You can use this content in your `README.md` to explain the ELF structure and process memory layout. 😊
-
---- 
-
-Feel free to copy and paste this into your `README.md` file!
