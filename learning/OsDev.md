@@ -791,24 +791,63 @@ Windows use COM / PE / EXE
 
 ## ELF
 
+There are three main types of object files :
+
+• A relocatable file holds code and data suitable for linking with other object files to create an
+executable or a shared object file.
+• An executable file holds a program suitable for execution.
+• A shared object file holds code and data suitable for linking in two contexts. First, the link
+editor may process it with other relocatable and shared object files to create another object file.
+Second, the dynamic linker combines it with an executable file and other shared objects to
+create a process image.
+
+
 An ELF (Executable and Linkable Format) file is organized into several sections, each serving a specific purpose. Here is a schematic representation of its structure:
 
+Before diving into memory layout, it's essential to understand the basic structure of an ELF file. An ELF file consists of several parts:
+
+   - ELF Header: Contains information about the file type, architecture, and other global properties.
+
+   - Program Headers: Describe the segments to be loaded into memory.
+
+   - Section Headers: Provide details about the sections used by the linker and debugger.
+
+   - Segments and Sections: The actual data that makes up the executable or library.
+
+![ELF](elfobjectfileformat.png)
+
+
+![ELF](elf.png)
+
+
+## ELF file on disk
+
 ```
-+---------------------+
-|      ELF Header     |  <-- Contains metadata about the file (type, architecture, etc.)
-+---------------------+
-| Program Header Table|  <-- Describes program segments (loading into memory)
-+---------------------+
-|       .text         |  <-- Section containing executable instructions (code)
-+---------------------+
-|       .data         |  <-- Section containing initialized data (global variables)
-+---------------------+
-|       .rodata       |  <-- Section containing read-only data (constants)
-+---------------------+
-|       .bss          |  <-- Section for uninitialized data (reserved space)
-+---------------------+
-| Section Header Table|  <-- Describes file sections (for linking)
-+---------------------+
++-------------------------------+
+|          ELF Header           |  <-- Entry Point: 0x2009f0
+|           (52 octets)         |
++-------------------------------+
+| Program Header Table (4 PHDR) |  <-- LOAD (Code), LOAD (RO), LOAD (RW), GNU_STACK
++-------------------------------+
+|           .text               |  ╔═══════════════╗
+|       (0xA66 octets)          |  ║ Code Machine  ║
+|  .text.__x86.get_pc_thunk.*   |  ║ (ex: mov, jmp)║
++-------------------------------+  ╚═══════════════╝
+|           .rodata             |  ╔═══════════════╗
+|       (0x80 octets)           |  ║ Constantes    ║
+|    .eh_frame, .rodata.str1.1  |  ║ (ex: "Hello") ║
++-------------------------------+  ╚═══════════════╝
+|           .data               |  ╔═══════════════╗
+|        (8 octets)             |  ║ Variables     ║
+|       .got.plt (12 octets)     |  ║ Initialisées  ║
++-------------------------------+  ╚═══════════════╝
+|           .bss                |  [Espace réservé]
+|      (0x8C0 octets)           |  (Non stocké)
+|           .stack              |  
+|     (0x1000 octets)           |  
++-------------------------------+
+|       Section Headers         |
++-------------------------------+
 ```
 
 ---
@@ -822,74 +861,204 @@ An ELF (Executable and Linkable Format) file is organized into several sections,
 
 ### Process Memory Layout
 
-When an ELF program is loaded into memory to become a process, it is mapped into the process's virtual address space. Here is what the typical memory layout looks like:
+When an ELF program is loaded into memory to become a process, it is mapped into the process's virtual address space.
 
 ```
-+---------------------+  High Memory
-|      Stack          |  <-- Stack: local variables, function calls
-|         |           |
-|         v           |
-+---------------------+
-|         ^           |
-|         |           |
-|      Heap           |  <-- Heap: dynamically allocated memory (malloc, etc.)
-+---------------------+
-|      .data          |  <-- Initialized data (global variables)
-+---------------------+
-|      .rodata        |  <-- Read-only data (constants)
-+---------------------+
-|      .text          |  <-- Executable code (program instructions)
-+---------------------+  Low Memory
++-------------------------------+  Haut de la mémoire
+|           .stack              |  ╔═══════════════╗ 0x2038C0
+|       (0x1000 octets)         |  ║    Pile       ║
+|                               |  ╠═══════════════╣
+|           .bss                |  ║    BSS        ║ 0x203000
+|       (0x8C0 octets)          |  ║ (Zéro)        ║
++-------------------------------+  ╠═══════════════╣
+|           .data               |  ║   Data        ║ 0x202000
+|       (8 octets + 12)         |  ║ Initialisées  ║
++-------------------------------+  ╠═══════════════╣
+|           .rodata             |  ║  Constantes   ║ 0x201000
+|  .eh_frame, .rodata.str1.1    |  ║ (Read-Only)   ║
++-------------------------------+  ╠═══════════════╣
+|           .text               |  ║   Code        ║ 0x200000
+|  .text.__x86.get_pc_thunk.*   |  ║ Exécutable    ║
+|       Entry Point: 0x2009f0 → ───╚═══════════════╝
++-------------------------------+  Bas de la mémoire
+```
+
+```
+         Fichier ELF                    Mémoire
+          +---------+                  +-----------------+
+          | .text   | -- LOAD R-E -->  | 0x200000 (Code) |
+          +---------+                  +-----------------+
+          | .rodata | -- LOAD R ---->  | 0x201000 (RO)   |
+          +---------+                  +-----------------+
+          | .data   | -- LOAD RW -->   | 0x202000 (RW)   |
+          | .bss    |                  | 0x203000 (BSS)  |
+          | .stack  |                  | 0x2038C0 (Stack)|
+          +---------+                  +-----------------+
 ```
 
 ---
 
-### Explanation of Memory Regions
 
-1. **Stack**:
-   - Used to store local variables, function return addresses, and function arguments.
-   - Grows downward (toward lower addresses).
-
-2. **Heap**:
-   - Used for dynamic memory allocation (via `malloc`, `new`, etc.).
-   - Grows upward (toward higher addresses).
-
-3. **.text (Code)**:
-   - Contains the executable instructions of the program.
-   - Read-only to prevent accidental modification of the code.
-
-4. **.data (Initialized Data)**:
-   - Contains initialized global and static variables.
-   - Read-write.
-
-5. **.rodata (Read-Only Data)**:
-   - Contains constants and string literals.
-   - Read-only.
-
-6. **.bss (Uninitialized Data)**:
-   - Contains uninitialized global variables.
-   - Space is reserved in memory, but no values are stored in the ELF file.
-
----
-
-### Visual Diagram
-
-Here is a visual diagram to illustrate the memory mapping:
+`readelf -e build/kfs`
 
 ```
-+---------------------+  High Memory (0xFFFFFFFF)
-|      Stack          |
-|         |           |
-|         v           |
-+---------------------+
-|         ^           |
-|         |           |
-|      Heap           |
-+---------------------+
-|      .data          |
-+---------------------+
-|      .rodata        |
-+---------------------+
-|      .text          |
-+---------------------+  Low Memory (0x00000000)
+ELF Header:
+  Magic:   7f 45 4c 46 01 01 01 00 00 00 00 00 00 00 00 00 
+  Class:                             ELF32
+  Data:                              2's complement, little endian
+  Version:                           1 (current)
+  OS/ABI:                            UNIX - System V
+  ABI Version:                       0
+  Type:                              EXEC (Executable file)
+  Machine:                           Intel 80386
+  Version:                           0x1
+  Entry point address:               0x2009f0
+  Start of program headers:          52 (bytes into file)
+  Start of section headers:          30712 (bytes into file)
+  Flags:                             0x0
+  Size of this header:               52 (bytes)
+  Size of program headers:           32 (bytes)
+  Number of program headers:         4
+  Size of section headers:           40 (bytes)
+  Number of section headers:         24
+  Section header string table index: 23
 ```
+
+```
+Elf file type is EXEC (Executable file)
+Entry point 0x2009f0
+There are 4 program headers, starting at offset 52
+
+Program Headers:
+  Type           Offset   VirtAddr   PhysAddr   FileSiz MemSiz  Flg Align
+  LOAD           0x001000 0x00200000 0x00200000 0x00a76 0x00a76 R E 0x1000
+  LOAD           0x002000 0x00201000 0x00201000 0x005e4 0x005e4 R   0x1000
+  LOAD           0x003000 0x00202000 0x00202000 0x00014 0x028c0 RW  0x1000
+  GNU_STACK      0x000000 0x00000000 0x00000000 0x00000 0x00000 RWE 0x10
+
+ Section to Segment mapping:
+  Segment Sections...
+   00     .text .text.__x86.get_pc_thunk.bx .text.__x86.get_pc_thunk.ax .text.__x86.get_pc_thunk.si .text.__x86.get_pc_thunk.di 
+   01     .rodata .eh_frame .rodata.str1.1 
+   02     .data .got.plt .bss .stack 
+   03   
+```
+
+```
+There are 24 section headers, starting at offset 0x77f8:
+
+Section Headers:
+  [Nr] Name              Type            Addr     Off    Size   ES Flg Lk Inf Al
+  [ 0]                   NULL            00000000 000000 000000 00      0   0  0
+  [ 1] .text             PROGBITS        00200000 001000 000a66 00  AX  0   0 4096
+  [ 2] .text.__x86.[...] PROGBITS        00200a66 001a66 000004 00  AX  0   0  1
+  [ 3] .text.__x86.[...] PROGBITS        00200a6a 001a6a 000004 00  AX  0   0  1
+  [ 4] .text.__x86.[...] PROGBITS        00200a6e 001a6e 000004 00  AX  0   0  1
+  [ 5] .text.__x86.[...] PROGBITS        00200a72 001a72 000004 00  AX  0   0  1
+  [ 6] .rodata           PROGBITS        00201000 002000 000080 00   A  0   0 4096
+  [ 7] .eh_frame         PROGBITS        00201080 002080 000548 00   A  0   0  4
+  [ 8] .rodata.str1.1    PROGBITS        002015c8 0025c8 00001c 01 AMS  0   0  1
+  [ 9] .data             PROGBITS        00202000 003000 000008 00  WA  0   0 4096
+  [10] .got.plt          PROGBITS        00202008 003008 00000c 04  WA  0   0  4
+  [11] .bss              NOBITS          00203000 003014 0008c0 00  WA  0   0 4096
+  [12] .stack            NOBITS          002038c0 003014 001000 00  WA  0   0  1
+  [13] .debug_info       PROGBITS        00000000 003014 00144f 00      0   0  1
+  [14] .debug_abbrev     PROGBITS        00000000 004463 000b40 00      0   0  1
+  [15] .debug_loc        PROGBITS        00000000 004fa3 000aa6 00      0   0  1
+  [16] .debug_aranges    PROGBITS        00000000 005a49 000180 00      0   0  1
+  [17] .debug_ranges     PROGBITS        00000000 005bc9 000198 00      0   0  1
+  [18] .debug_line       PROGBITS        00000000 005d61 000c8a 00      0   0  1
+  [19] .debug_str        PROGBITS        00000000 0069eb 0005b6 01  MS  0   0  1
+  [20] .comment          PROGBITS        00000000 006fa1 00002b 01  MS  0   0  1
+  [21] .symtab           SYMTAB          00000000 006fcc 000440 10     22  26  4
+  [22] .strtab           STRTAB          00000000 00740c 0002ba 00      0   0  1
+  [23] .shstrtab         STRTAB          00000000 0076c6 00012f 00      0   0  1
+Key to Flags:
+  W (write), A (alloc), X (execute), M (merge), S (strings), I (info),
+  L (link order), O (extra OS processing required), G (group), T (TLS),
+  C (compressed), x (unknown), o (OS specific), E (exclude),
+  D (mbind), p (processor specific)
+```
+
+```
+
+Symbol table '.symtab' contains 68 entries:
+   Num:    Value  Size Type    Bind   Vis      Ndx Name
+     0: 00000000     0 NOTYPE  LOCAL  DEFAULT  UND 
+     1: 00000000     0 FILE    LOCAL  DEFAULT  ABS src/boot.s
+     2: 00000000     0 FILE    LOCAL  DEFAULT  ABS gdt.c
+     3: 00000000     0 FILE    LOCAL  DEFAULT  ABS idt.c
+     4: 00201000   128 OBJECT  LOCAL  DEFAULT    6 scancode_to_char.0
+     5: 00000000     0 FILE    LOCAL  DEFAULT  ABS kernel.c
+     6: 00000000     0 FILE    LOCAL  DEFAULT  ABS vga.c
+     7: 00000000     0 FILE    LOCAL  DEFAULT  ABS ft_itoa.c
+     8: 00203888    12 OBJECT  LOCAL  DEFAULT   11 buffer.0
+     9: 00000000     0 FILE    LOCAL  DEFAULT  ABS ft_memcpy.c
+    10: 00000000     0 FILE    LOCAL  DEFAULT  ABS ft_memset.c
+    11: 00000000     0 FILE    LOCAL  DEFAULT  ABS ft_printk.c
+    12: 002038a0    32 OBJECT  LOCAL  DEFAULT   11 buffer.0
+    13: 00000000     0 FILE    LOCAL  DEFAULT  ABS ft_strcat.c
+    14: 00000000     0 FILE    LOCAL  DEFAULT  ABS ft_strcmp.c
+    15: 00000000     0 FILE    LOCAL  DEFAULT  ABS ft_strcpy.c
+    16: 00000000     0 FILE    LOCAL  DEFAULT  ABS ft_strlen.c
+    17: 00000000     0 FILE    LOCAL  DEFAULT  ABS src/gidt.s
+    18: 00000000     0 FILE    LOCAL  DEFAULT  ABS src/inb.s
+    19: 00000000     0 FILE    LOCAL  DEFAULT  ABS src/keyboard.s
+    20: 00000000     0 FILE    LOCAL  DEFAULT  ABS src/lidt.s
+    21: 00000000     0 FILE    LOCAL  DEFAULT  ABS src/outb.s
+    22: 00000000     0 FILE    LOCAL  DEFAULT  ABS src/reloadSegments.s
+    23: 00200a57     0 NOTYPE  LOCAL  DEFAULT    1 reload_CS
+    24: 00000000     0 FILE    LOCAL  DEFAULT  ABS 
+    25: 00202008     0 OBJECT  LOCAL  DEFAULT   10 _GLOBAL_OFFSET_TABLE_
+    26: 00200a10     0 NOTYPE  GLOBAL DEFAULT    1 inb
+    27: 00200a6e     0 FUNC    GLOBAL HIDDEN     4 __x86.get_pc_thunk.si
+    28: 00203884     4 OBJECT  GLOBAL DEFAULT   11 xpos
+    29: 00200a72     0 FUNC    GLOBAL HIDDEN     5 __x86.get_pc_thunk.di
+    30: 00200980    57 FUNC    GLOBAL DEFAULT    1 ft_strcpy
+    31: 00203060     6 OBJECT  GLOBAL DEFAULT   11 g_IDTR
+    32: 00200540    52 FUNC    GLOBAL DEFAULT    1 puts
+    33: 00200940    56 FUNC    GLOBAL DEFAULT    1 ft_strcmp
+    34: 00200a6a     0 FUNC    GLOBAL HIDDEN     3 __x86.get_pc_thunk.ax
+    35: 00200a50     0 NOTYPE  GLOBAL DEFAULT    1 reloadSegments
+    36: 00200220    78 FUNC    GLOBAL DEFAULT    1 keyboard_handler
+    37: 002003e0    99 FUNC    GLOBAL DEFAULT    1 set_cursor
+    38: 00203020    64 OBJECT  GLOBAL DEFAULT   11 g_GDT
+    39: 00200450   124 FUNC    GLOBAL DEFAULT    1 enable_cursor
+    40: 00203080  2048 OBJECT  GLOBAL DEFAULT   11 g_IDT
+    41: 00200690    53 FUNC    GLOBAL DEFAULT    1 ft_memcpy
+    42: 00200a30     0 NOTYPE  GLOBAL DEFAULT    1 load_IDT
+    43: 002009f0     0 NOTYPE  GLOBAL DEFAULT    1 _start
+    44: 002000d0    62 FUNC    GLOBAL DEFAULT    1 set_GDT_Gate
+    45: 002001b0   103 FUNC    GLOBAL DEFAULT    1 init_idt
+    46: 00200a66     0 FUNC    GLOBAL HIDDEN     2 __x86.get_pc_thunk.bx
+    47: 00200580    60 FUNC    GLOBAL DEFAULT    1 ft_lenght
+    48: 00200010   192 FUNC    GLOBAL DEFAULT    1 init_gdt
+    49: 002048c0     0 NOTYPE  GLOBAL DEFAULT   12 stack_top
+    50: 002004d0    97 FUNC    GLOBAL DEFAULT    1 init
+    51: 00200a40     0 NOTYPE  GLOBAL DEFAULT    1 outb
+    52: 002005c0   196 FUNC    GLOBAL DEFAULT    1 ft_itoa
+    53: 002002f0   235 FUNC    GLOBAL DEFAULT    1 putc
+    54: 00200a20     0 NOTYPE  GLOBAL DEFAULT    1 keyboard_ISR
+    55: 00200110   149 FUNC    GLOBAL DEFAULT    1 remap_pic
+    56: 00203880     4 OBJECT  GLOBAL DEFAULT   11 ypos
+    57: 00200780   354 FUNC    GLOBAL DEFAULT    1 ft_printk
+    58: 00202000     1 OBJECT  GLOBAL DEFAULT    9 text_color
+    59: 00200700   122 FUNC    GLOBAL DEFAULT    1 ft_itoa_base
+    60: 00202004     4 OBJECT  GLOBAL DEFAULT    9 video
+    61: 00200270    60 FUNC    GLOBAL DEFAULT    1 setGate
+    62: 002008f0    72 FUNC    GLOBAL DEFAULT    1 ft_strcat
+    63: 00203000     6 OBJECT  GLOBAL DEFAULT   11 g_GDTR
+    64: 002009c0    33 FUNC    GLOBAL DEFAULT    1 ft_strlen
+    65: 002002b0    56 FUNC    GLOBAL DEFAULT    1 kmain
+    66: 00200a00     0 NOTYPE  GLOBAL DEFAULT    1 load_GDT
+    67: 002006d0    46 FUNC    GLOBAL DEFAULT    1 ft_memset
+
+STT_NOTYPE The symbol's type is not specified
+STT_OBJECT The symbol is associated with a data object, such as a variable, an array,
+and so on.
+STT_FUNC The symbol is associated with a function or other executable code.
+STT_FILE A file symbol has STB_LOCAL binding, its section index is SHN_ABS, and
+it precedes the other STB_LOCAL symbols for the file, if it is present.
+```
+
+
