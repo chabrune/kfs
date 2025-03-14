@@ -804,7 +804,7 @@ Second, the dynamic linker combines it with an executable file and other shared 
 create a process image.
 
 
-An ELF (Executable and Linkable Format) file is organized into several sections, each serving a specific purpose. Here is a schematic representation of its structure:
+An ELF (Executable and Linkable Format) file is organized into several sections, each serving a specific purpose. 
 
 Before diving into memory layout, it's essential to understand the basic structure of an ELF file. An ELF file consists of several parts:
 
@@ -1063,4 +1063,111 @@ STT_FILE A file symbol has STB_LOCAL binding, its section index is SHN_ABS, and
 it precedes the other STB_LOCAL symbols for the file, if it is present.
 ```
 
+
+# Kernel Output Protocols - Peripheral interfaces
+
+## I/O Ports
+
+### Definition
+I/O ports are physical communication channels between the CPU and peripherals (keyboard, mouse, interrupt controller, etc.).
+
+### Address Space
+They have a separate address space from RAM (16-bit, allowing for 65,536 possible ports).
+
+### Access
+They are accessed using assembly instructions `inb` (to read a byte) and `outb` (to write a byte), not through memory access.
+
+### Peripheral Registers
+Each peripheral has internal registers mapped to specific I/O ports.
+
+--- 
+
+
+![io](io_ports.png)
+
+## Bus Architectures
+
+### ISA (Industry Standard Architecture)
+- **Legacy 16-bit bus** (1981 IBM PC)
+- **8MHz clock speed**
+- **Memory addressing**: 24-bit (16MB)
+- **Key Features**:
+  - Separate I/O and memory spaces
+  - DMA channel support
+  - Jumper-based configuration
+
+### PCI (Peripheral Component Interrupt)
+- **32/64-bit parallel bus** (1992)
+- **Plug-and-play** auto-configuration
+- **133MB/s bandwidth** (PCI 2.0)
+- **Memory-mapped I/O** (MMIO)
+- **Evolution**: PCI → PCI-X → PCI Express (serial)
+
+---
+
+## I/O Port Fundamentals
+
+### Memory vs I/O Space
+```text
+CPU
+├── Memory Bus → RAM (0x00000000-0xFFFFFFFF)
+└── I/O Bus → Peripherals (0x0000-0xFFFF)
+```
+
+### Key Characteristics
+- **16-bit address space**: 65,536 ports (0x0000-0xFFFF)
+- **Access Methods**:
+  ```asm
+  in al, dx    ; Read from port DX
+  out dx, al   ; Write to port DX
+  ```
+- **Common Port Ranges**:
+  - 0x000-0x01F: DMA Controller
+  - 0x020-0x03F: PIC (Programmable Interrupt Controller)
+  - 0x060-0x064: PS/2 & Keyboard
+  - 0x070-0x071: CMOS/RTC
+
+---
+
+
+CMOS (Complementary Metal-Oxide-Semiconductor)
+    - RTC (Real-Time Clock)
+
+
+## PS/2 
+
+PS2 - 7 pins 
+
+PS2 primary port (Purple) -> Connected to a keyboard
+PS2 secondary port (Green) -> Pointing device (usually a Mouse )
+plug and play mechanism - hot plugging was not available
+
+These two port they have to be connected to soemthing called PS2 controller responsible for managing peripheral interfaces 
+CPU can communicate with the PS2 controller using I/O bus - so this controller has a commmand and data I/O port
+0x64 command port
+0x60 data port
+
+The PS2 controller using these two ports may be used in order to manage any devices that are plugged into the primary or secondary port  which allow us to write drivers for a keyboard and a mouse.
+
+Nowadays, most computers no longer include physical PS/2 ports, as users primarily rely on the Universal Serial Bus (USB) for peripherals like keyboards and mice. However, many motherboards emulate a PS/2 controller in firmware (UEFI/BIOS) to ensure backward compatibility. This emulation allows USB devices to function during early boot stages (e.g., BIOS setup) before the operating system loads native USB drivers.
+
+An other thing that the PS2 controller does is it maps the proper IRQ channels for these two PS2 ports.
+The standard way that it give the primary port IRQ1 and it give secondary port IRQ12.
+
+Important thing : In order to handle IRQ12 (mouse for exemple)(IRQ 12 is slave PIC), we have to unmask the IRQ2 on the master pic (cascade)
+
+Read a byte from I/O port 0x60 (PS/2 DATA PORT) upon IRQ1 -> Scancode
+
+Command : 0x64
+Data    : 0x60
+
+PS2 seconday port initialization 
+- 0xA8, 0x20 to command port
+- Read status from data port, OR 2 (to set the status bit to 1)
+- Send 0x60 to command
+- Send modified status to data 
+
+Set secondary port to streaming mode
+- Send 0xD4 to command
+- 
 
